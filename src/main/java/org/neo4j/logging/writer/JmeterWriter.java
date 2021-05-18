@@ -88,7 +88,7 @@ public class JmeterWriter {
         StringWriter writer = new StringWriter();
         t.merge( context, writer );
         System.out.println(writer);
-        writer.
+       // writer.
 
     }
 

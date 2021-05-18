@@ -40,7 +40,7 @@ public class QueryLogParser {
     public static void main(String[] args) {
 
         //process arguments
-        Option input = new Option("i", "input", true, "input file path");
+        Option input = new Option("i", "input", true, "query.log file path");
         input.setRequired(true);
         options.addOption(input);
 
@@ -52,7 +52,7 @@ public class QueryLogParser {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("query-log-parser", options);
+            formatter.printHelp("java -cp query-log-parser-1.0-SNAPSHOT.jar org.neo4j.logging.parser.QueryLogParser", options);
             System.exit(1);
         }
         String inputFile = cmd.getOptionValue("input");
