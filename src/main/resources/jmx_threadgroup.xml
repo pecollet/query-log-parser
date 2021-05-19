@@ -23,8 +23,8 @@
                 <BoltSampler guiclass="TestBeanGUI" testclass="BoltSampler" testname="Bolt Request" enabled="true">
                     <stringProp name="accessMode">WRITE</stringProp>
                     <stringProp name="database">$boltSampler.database</stringProp>
-                    <stringProp name="cypher">$boltSampler.query</stringProp>
-                    <stringProp name="params">$boltSampler.queryParameters</stringProp>
+                    <stringProp name="cypher">$esc.xml($boltSampler.query)</stringProp>
+                    <stringProp name="params">$esc.xml($boltSampler.queryParameters)</stringProp>
                     <boolProp name="recordQueryResults">true</boolProp>
                     <intProp name="txTimeout">$boltSampler.txTimeout</intProp>
                 </BoltSampler>

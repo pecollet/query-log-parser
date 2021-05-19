@@ -40,30 +40,36 @@ public class QueryLogParser {
     public static void main(String[] args) {
 
         //process arguments
-        Option input = new Option("i", "input", true, "query.log file path");
+        Option input = new Option("i", "input", true, "path of the query.log file to process");
         input.setRequired(true);
         options.addOption(input);
 
-        Option output = new Option("o", "output", true, "output [json|jmeter|hc|standard]");
+        Option output = new Option("o", "output", true, "output to produce : [json|jmeter|hc|standard]");
         output.setRequired(true);
         options.addOption(output);
+
+        //TODO : add options
+        // all : allow multiple input files (-i <dir> and we fetch all query.log* in it)
+        // all : expose query limit
+        // JMETER : speed-up/down, compress quiet times
+        // JMETER : expose thread limit
+
 
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("java -cp query-log-parser-1.0-SNAPSHOT.jar org.neo4j.logging.parser.QueryLogParser", options);
+            formatter.printHelp("java -cp query-log-parser-1.0-SNAPSHOT.jar org.neo4j.logging.parser.QueryLogParser", options, true);
             System.exit(1);
         }
         String inputFile = cmd.getOptionValue("input");
         OutputFormat outputOption = OutputFormat.valueOf(cmd.getOptionValue("output").toUpperCase(Locale.ROOT));
 
         //open input file
-        System.out.println("Loading file"+inputFile+"...");
+        System.out.println("Loading file : "+inputFile+"...");
         Path inputFilePath = Path.of(inputFile);
-        String outputFile=inputFile+".out";
-
         LogLineParser logLineParser=selectParser(inputFilePath);
+        String outputFile=outputFileName(inputFile, outputOption);
 
         //create output file
         try {
@@ -73,7 +79,8 @@ public class QueryLogParser {
                 outputFilePath = Path.of(outputFile);
             }
         } catch(IOException e) {
-            e.printStackTrace();
+            System.out.println("Failed to write to file "+outputFilePath+" ("+e.getClass()+")");
+            //e.printStackTrace();
             System.exit(2);
         }
 
@@ -112,7 +119,8 @@ public class QueryLogParser {
         try {
             firstLine=Files.readString(path).lines().findFirst();
         } catch(IOException e) {
-            e.printStackTrace();
+            System.out.println("Failed to read from file "+path+" ("+e.getClass()+")");
+            //e.printStackTrace();
             System.exit(2);
         }
         if (firstLine.isPresent()) {
@@ -130,6 +138,26 @@ public class QueryLogParser {
         }
         System.out.println("Input type="+detectedType.name());
         return parser;
+    }
+
+    private static String outputFileName(String inputFile, OutputFormat outputOption) {
+        String outputFileName="";
+        switch (outputOption) {
+            case JSON:
+                outputFileName= inputFile.replaceFirst("\\.log$",".json.log");
+                break;
+            case STANDARD:
+                outputFileName= inputFile.replaceFirst("\\.log$",".std.log");
+                break;
+            case JMETER:
+                outputFileName= inputFile+".jmx";
+                break;
+            case HC:
+                outputFileName= inputFile+".hc.properties";
+                break;
+        }
+        System.out.println("Output file :"+outputFileName);
+        return outputFileName;
     }
 
     private static void translate(Path outputFilePath, LogLineParser parser, LogLineWriter writer) {

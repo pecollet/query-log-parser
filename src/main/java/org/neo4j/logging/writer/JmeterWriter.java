@@ -3,12 +3,17 @@ package org.neo4j.logging.writer;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.tools.ToolManager;
 import org.neo4j.logging.parser.LogLineParser;
 import org.neo4j.logging.utils.Util;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -18,6 +23,7 @@ public class JmeterWriter {
     private int maxQueries=10000;
     private LogLineParser parser;
     private String logStartTime;
+    private long logStartTimeLong;
     private String logEndTime;
     private long timeSpanMillis;
     private List<ThreadGroupData> threadGroups=new ArrayList<>();
@@ -29,6 +35,7 @@ public class JmeterWriter {
             this.logStartTime=parser.parse().findFirst().get()
                         .get("time").toString();
             long count = parser.parse().count();
+            System.out.println("[log lines read : "+count+"]");
             this.logEndTime=parser.parse()
                         .skip(count - 1).findFirst().get()
                         .get("time").toString();
@@ -36,7 +43,9 @@ public class JmeterWriter {
             e.printStackTrace();
             System.exit(2);
         }
-        this.timeSpanMillis=Util.toEpoch(this.logEndTime) - Util.toEpoch(this.logStartTime);
+        this.logStartTimeLong=Util.toEpoch(this.logStartTime);
+        this.timeSpanMillis=Util.toEpoch(this.logEndTime) - this.logStartTimeLong;
+        System.out.println("[time span : "+this.timeSpanMillis+" ms]");
     }
 
     public JmeterWriter withMaxThreads(int maxThreads) {
@@ -75,28 +84,32 @@ public class JmeterWriter {
 
 
     public void write(Path outputFilePath) {
-        System.out.println(this.threadGroups.size()+" "+this.threadGroups.get(0).getName() );
+        System.out.println("[threads : "+this.threadGroups.size()+"]");
+        ToolManager velocityToolManager = new ToolManager();
+        velocityToolManager.configure("src/velocity-tools.xml");
+
         VelocityEngine velocityEngine = new VelocityEngine();
         velocityEngine.init();
         Template t = velocityEngine.getTemplate("src/main/resources/jmx_layout.xml");
 
-        VelocityContext context = new VelocityContext();
-
-
+        VelocityContext context = new VelocityContext(velocityToolManager.createContext());
         context.put("threadGroups", this.threadGroups);
 
-        StringWriter writer = new StringWriter();
-        t.merge( context, writer );
-        System.out.println(writer);
-       // writer.
-
+        try {
+            FileWriter writer = new FileWriter(String.valueOf(outputFilePath));
+            t.merge(context, writer);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(2);
+        }
     }
 
     public class BoltSamplerData {
         private long startTime;
         private String database;
         private String query;
-        private String queryParameters; //TODO : convert to xml format
+        private String queryParameters;
         private String timerName="Wait";
         private String timerComment;
         private long threadDelay;
@@ -192,7 +205,8 @@ public class JmeterWriter {
             String comment="";
             int count = this.queries.size();
             if (count == 0) {
-                wait=0;
+                //thread delay is between log time and beginning of log file
+                wait=bs.startTime - logStartTimeLong;
                 comment="no wait";
             } else {
                 wait=bs.startTime - this.queries.get(count-1).startTime;
