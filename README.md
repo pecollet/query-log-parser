@@ -1,5 +1,6 @@
 # query-log-parser
-a tool to parse and transform Neo4j query logs
+A tool to parse and transform Neo4j query logs.
+Allows generating JMeter test plans to replay queries.
 
 ## Usage
 ```
@@ -18,7 +19,7 @@ query.log can be in standard or json format (auto-detected)
 
 Whichever output is selected the output file is names "_inputFile_.out".
 
-## JMeter test play
+## JMeter test plan
 
 The feature aims to generate a valid test plan xml file, with :
 - a Bolt Connection Element 
