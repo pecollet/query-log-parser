@@ -1,5 +1,7 @@
 package org.neo4j.logging.parser;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,13 +50,13 @@ public class StandardParser implements LogLineParser {
             new AbstractMap.SimpleEntry<>(12, "source"),
             new AbstractMap.SimpleEntry<>(13, "database"),
             new AbstractMap.SimpleEntry<>(14, "username"),
-            new AbstractMap.SimpleEntry<>(15, "queryParameters"),
-            new AbstractMap.SimpleEntry<>(16, "params"),
+            new AbstractMap.SimpleEntry<>(15, "query"),
+            new AbstractMap.SimpleEntry<>(16, "queryParameters"),
             new AbstractMap.SimpleEntry<>(17, "runtime"),
             new AbstractMap.SimpleEntry<>(18, "annotationData"),
             new AbstractMap.SimpleEntry<>(19, "failureReason") )
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
+    int[] integerFields= {5,6,7,8,9,10,11};
     StandardParser(Path filename) {
         this.filename=filename;
     }
@@ -67,7 +69,7 @@ public class StandardParser implements LogLineParser {
     private Map<?,?> lineToMap(String line) {
         //TODO : deal with multiline entries
         Matcher matcher = LOGGER_LINE_PARSER.matcher( line );
-        Map<String, String> map =new HashMap<>();
+        Map<String, Object> map =new HashMap<>();
         if (matcher.find()) {
             for (int i = 1; i <= matcher.groupCount(); i++) {
                 //System.out.println("Group " + i + ": " + matcher.group(i));
@@ -79,10 +81,16 @@ public class StandardParser implements LogLineParser {
                     } else {
                         value= matcher.group(2) == "INFO" ? "success" : "fail";
                     }
+                    map.put(regexGroupNames.get(i), value);
+                } else if (ArrayUtils.contains(integerFields, i)) {
+                    try {
+                        map.put(regexGroupNames.get(i), Integer.parseInt(matcher.group(i)));
+                    } catch (NumberFormatException n) {
+                        //do nothing
+                    }
                 } else {
-                    value = matcher.group(i);
+                    map.put(regexGroupNames.get(i), matcher.group(i));
                 }
-                map.put(regexGroupNames.get(i), value);
             }
         } else {
             System.out.println("No match found : "+line);
