@@ -3,6 +3,8 @@ package org.neo4j.logging.writer;
 import java.util.Map;
 
 public class StandardLogLineWriter implements LogLineWriter {
+
+
     public String writeLine(Map<?,?> map) {
         String eventString=getEventString(map.get("event").toString());
         String reasonString=map.get("failureReason") == null ? "" : " - "+map.get("failureReason");
@@ -16,7 +18,7 @@ public class StandardLogLineWriter implements LogLineWriter {
                 map.get("database")+" - "+
                 map.get("user")+" - "+
                 map.get("query")+" - "+
-                map.get("queryParameters")+" - "+
+                map.get("queryParameters")+" - "+  //TODO : should be like "- {name: 'match', desc: <null>} -" but is "- {context={address=localhost:7617}, database=<null>} -" // c.f. QueryLogFormatter.formatMapValue (: -> = and single-quote string values)
                 "runtime="+map.get("runtime")+" - "+
                 map.get("annotationData")+
                 reasonString+

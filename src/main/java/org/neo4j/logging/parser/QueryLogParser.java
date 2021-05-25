@@ -77,6 +77,7 @@ public class QueryLogParser {
                 outputFilePath = Files.createFile(Path.of(outputFile));
             } else {
                 outputFilePath = Path.of(outputFile);
+                //TODO: truncate file
             }
         } catch(IOException e) {
             System.out.println("Failed to write to file "+outputFilePath+" ("+e.getClass()+")");
@@ -125,7 +126,7 @@ public class QueryLogParser {
         }
         if (firstLine.isPresent()) {
             if (firstLine.get().startsWith("{")) {
-                parser = new JsonParser(path);
+                parser = new JsonLogParser(path);
                 detectedType= QueryLogType.JSON;
             } else {
                 parser = new StandardParser(path);

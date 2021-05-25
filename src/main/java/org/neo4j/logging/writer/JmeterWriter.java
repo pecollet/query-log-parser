@@ -1,5 +1,7 @@
 package org.neo4j.logging.writer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -27,6 +29,7 @@ public class JmeterWriter {
     private String logEndTime;
     private long timeSpanMillis;
     private List<ThreadGroupData> threadGroups=new ArrayList<>();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public JmeterWriter(LogLineParser parser) {
         this.parser=parser;
@@ -75,7 +78,7 @@ public class JmeterWriter {
             tg.setStartTime(firstTime);
             for (Map<?, ?> queryMap : value) {
                 BoltSamplerData bs = new BoltSamplerData(queryMap.get("time").toString(), queryMap.get("database").toString(),
-                        queryMap.get("query").toString(), queryMap.get("queryParameters").toString());
+                        queryMap.get("query").toString(), (Map)queryMap.get("queryParameters"));
                 tg.addBoltSampler(bs);
             }
             this.threadGroups.add(tg);
@@ -115,10 +118,15 @@ public class JmeterWriter {
         private long threadDelay;
         private int txTimeout;
 
-        public BoltSamplerData(String time, String database, String query, String parameters) {
+        public BoltSamplerData(String time, String database, String query, Map<?,?> parameters) {
             this.database=database;
             this.query=query;
-            this.queryParameters=parameters;
+            try {
+                this.queryParameters=mapper.writeValueAsString(parameters); //Util.formatJson(parameters);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+                this.queryParameters="Error parsing json";
+            }
             this.txTimeout=60;
             this.startTime=Util.toEpoch(time);
         }

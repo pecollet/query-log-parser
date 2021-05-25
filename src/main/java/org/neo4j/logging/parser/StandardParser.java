@@ -1,6 +1,8 @@
 package org.neo4j.logging.parser;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.ArrayUtils;
+import org.neo4j.logging.utils.Util;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +17,7 @@ import java.util.stream.Stream;
 
 public class StandardParser implements LogLineParser {
     private Path filename;
+    private static final ObjectMapper mapper = new ObjectMapper(); //json mapper to parse "json" fields (ex: query parameters)
 
     //reference : com/neo4j/kernel/impl/query/ConfiguredQueryLoggerTest.java 987
     private static final Pattern LOGGER_LINE_PARSER = Pattern.compile(
@@ -28,7 +31,7 @@ public class StandardParser implements LogLineParser {
                     "(?:(?<pageHits>\\d+) page hits, (?<pageFaults>\\d+) page faults - )?" +
                     "(?<source>embedded-session\\t|bolt-session[^>]*>|server-session(?:\\t[^\\t]*){3})\\t" +
                     "(?<database>[^\\s]+) - " +
-                    "(?<user>[^\\s]*) - " +    //* instead of
+                    "(?<user>[^\\s]*) - " +    //* instead of +
                     "(?<query>.+?(?= - ))" +
                     "(?: - (?<params>\\{.*?(?=} - )}))?" +
                     "(?: - runtime=(?<runtime>\\w+))? - " +
@@ -93,10 +96,12 @@ public class StandardParser implements LogLineParser {
                     map.put(regexGroupNames.get(i), matcher.group(i));
                 }
             }
+            map.put("type", "query");
         } else {
             System.out.println("No match found : "+line);
             //TODO : partial match up to query
         }
+        Util.parseJsonStringValues(map, mapper);
         return map;
     }
 }
