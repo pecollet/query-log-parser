@@ -82,13 +82,14 @@ public class StandardParser implements LogLineParser {
                         value= matcher.group(2) == "INFO" ? "success" : "fail";
                     }
                     map.put(regexGroupNames.get(i), value);
-                } else if (ArrayUtils.contains(integerFields, i)) {
+                } else if (ArrayUtils.contains(integerFields, i)) {  //integer fields
+                    //TODO : check allocatedBytes="-1" works
                     try {
                         map.put(regexGroupNames.get(i), Integer.parseInt(matcher.group(i)));
                     } catch (NumberFormatException n) {
                         //do nothing
                     }
-                } else {
+                } else { //normal case
                     map.put(regexGroupNames.get(i), matcher.group(i));
                 }
             }

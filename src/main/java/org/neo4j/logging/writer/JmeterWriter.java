@@ -195,9 +195,10 @@ public class JmeterWriter {
             this.comment=clientType;
         }
         public void setStartTime(String startTime) {
-            this.delay= (Util.toEpoch(startTime) - Util.toEpoch(logStartTime)) /1000;
+            long delayMs = Util.toEpoch(startTime) - Util.toEpoch(logStartTime);
+            this.delay= delayMs / 1000;
             //last until last query in the log
-            this.duration=(timeSpanMillis /1000) - this.delay;
+            this.duration=(timeSpanMillis - delayMs) /1000;
         }
         public void addBoltSampler(BoltSamplerData bs) {
             //measure time between new element and previous one
@@ -207,7 +208,7 @@ public class JmeterWriter {
             if (count == 0) {
                 //thread delay is between log time and beginning of log file
                 wait=bs.startTime - logStartTimeLong;
-                comment="no wait";
+                comment="from start to "+bs.startTime;
             } else {
                 wait=bs.startTime - this.queries.get(count-1).startTime;
                 comment="from "+this.queries.get(count-1).startTime+" to "+bs.startTime;

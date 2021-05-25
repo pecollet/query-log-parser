@@ -9,7 +9,7 @@
                 <stringProp name="ThreadGroup.ramp_time">0</stringProp>
                 <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
                 <stringProp name="TestPlan.comments">$velocityCount - $tg.comment</stringProp>
-                <boolProp name="ThreadGroup.scheduler">true</boolProp>
+                <boolProp name="ThreadGroup.scheduler">false</boolProp>
                 <stringProp name="ThreadGroup.duration">$tg.duration</stringProp>
                 <stringProp name="ThreadGroup.delay">$tg.delay</stringProp>
             </ThreadGroup>
