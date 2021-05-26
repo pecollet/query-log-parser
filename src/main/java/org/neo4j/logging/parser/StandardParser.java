@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -36,7 +37,9 @@ public class StandardParser implements LogLineParser {
                     "(?: - (?<params>\\{.*?(?=} - )}))?" +
                     "(?: - runtime=(?<runtime>\\w+))? - " +
                     "(?<additional>\\{.+?(?=(?:$| - )))" +
-                    "(?: - (?<reason>.*$))?$" );
+                    "(?: - (?<reason>.*$))?$" , Pattern.DOTALL);
+    private static final String LOG_ENTRY_SPLITTER ="\n(?=\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}[+-]\\d{4} )";
+    //private static final Pattern LOGGER_LINE_BEGINNING = Pattern.compile( REGEX_LOG_ENTRY_START );
 
     private static final Map<Integer, String> regexGroupNames= Stream.of(
             new AbstractMap.SimpleEntry<>(1, "time"),
@@ -65,14 +68,18 @@ public class StandardParser implements LogLineParser {
     }
 
     public Stream<Map<?,?>> parse() throws IOException {
-        return Files.readString(this.filename).lines().map(line -> lineToMap(line));
+       // return Files.readString(this.filename).lines().map(line -> lineToMap(line));
+      //  return Arrays.stream(Files.readString(this.filename).split(REGEX_LOG_ENTRY_START)).map(line -> lineToMap(line));
+      return  Pattern.compile(LOG_ENTRY_SPLITTER).splitAsStream(Files.readString(this.filename)).map(line -> lineToMap(line));
     }
 
 
     private Map<?,?> lineToMap(String line) {
+       // System.out.println(">> "+line);
         //TODO : deal with multiline entries
-        Matcher matcher = LOGGER_LINE_PARSER.matcher( line );
-        Map<String, Object> map =new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
+        Matcher matcher = LOGGER_LINE_PARSER.matcher(line);
+
         if (matcher.find()) {
             for (int i = 1; i <= matcher.groupCount(); i++) {
                 //System.out.println("Group " + i + ": " + matcher.group(i));
@@ -80,9 +87,9 @@ public class StandardParser implements LogLineParser {
                 String value;
                 if (i == 3) {
                     if (matcher.group(i) != null) {
-                        value="start";
+                        value = "start";
                     } else {
-                        value= matcher.group(2) == "INFO" ? "success" : "fail";
+                        value = matcher.group(2) == "INFO" ? "success" : "fail";
                     }
                     map.put(regexGroupNames.get(i), value);
                 } else if (ArrayUtils.contains(integerFields, i)) {  //integer fields
@@ -98,8 +105,7 @@ public class StandardParser implements LogLineParser {
             }
             map.put("type", "query");
         } else {
-            System.out.println("No match found : "+line);
-            //TODO : partial match up to query
+            System.out.println("No match found : " + line);
         }
         Util.parseJsonStringValues(map, mapper);
         return map;
