@@ -113,6 +113,7 @@ public class JmeterWriter {
         private String database;
         private String query;
         private String queryParameters;
+        private String name;
         private String timerName="Wait";
         private String timerComment;
         private long threadDelay;
@@ -121,6 +122,7 @@ public class JmeterWriter {
         public BoltSamplerData(String time, String database, String query, Map<?,?> parameters) {
             this.database=database;
             this.query=query;
+            this.name= (query.length() > 25) ? query.substring(0,24)+"..." : query;
             try {
                 this.queryParameters=mapper.writeValueAsString(parameters); //Util.formatJson(parameters);
             } catch (JsonProcessingException e) {
@@ -129,6 +131,14 @@ public class JmeterWriter {
             }
             this.txTimeout=60;
             this.startTime=Util.toEpoch(time);
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
 
         public String getTimerName() {

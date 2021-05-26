@@ -20,7 +20,7 @@
                     <stringProp name="ConstantTimer.delay">$boltSampler.threadDelay</stringProp>
                 </ConstantTimer>
                 <hashTree/>
-                <BoltSampler guiclass="TestBeanGUI" testclass="BoltSampler" testname="Bolt Request" enabled="true">
+                <BoltSampler guiclass="TestBeanGUI" testclass="BoltSampler" testname="$boltSampler.name" enabled="true">
                     <stringProp name="accessMode">WRITE</stringProp>
                     <stringProp name="database">$boltSampler.database</stringProp>
                     <stringProp name="cypher">$esc.xml($boltSampler.query)</stringProp>
