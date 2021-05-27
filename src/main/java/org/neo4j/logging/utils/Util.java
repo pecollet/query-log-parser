@@ -23,7 +23,7 @@ public class Util {
         parseJsonStringValue(map, "annotationData", mapper);
     }
 
-    private static void parseJsonStringValue(Map<String,Object> map, String key, ObjectMapper mapper) {
+    public static void parseJsonStringValue(Map<String,Object> map, String key, ObjectMapper mapper) {
         if (map.containsKey(key)) {
             //gson can parse unquoted json!
             String canonicalJson = com.google.gson.JsonParser.parseString(map.get(key).toString()).toString();

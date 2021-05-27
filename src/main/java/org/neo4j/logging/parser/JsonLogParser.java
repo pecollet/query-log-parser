@@ -18,7 +18,7 @@ public class JsonLogParser implements LogLineParser{
     private Path filename;
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    JsonLogParser(Path filename) {
+    public JsonLogParser(Path filename) {
         this.filename=filename;
     }
 

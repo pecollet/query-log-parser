@@ -1,6 +1,9 @@
-package org.neo4j.logging.parser;
+package org.neo4j.logging;
 
 import org.apache.commons.cli.*;
+import org.neo4j.logging.parser.JsonLogParser;
+import org.neo4j.logging.parser.LogLineParser;
+import org.neo4j.logging.parser.StandardLogParser;
 import org.neo4j.logging.writer.JmeterWriter;
 import org.neo4j.logging.writer.JsonLogLineWriter;
 import org.neo4j.logging.writer.LogLineWriter;
@@ -129,7 +132,7 @@ public class QueryLogParser {
                 parser = new JsonLogParser(path);
                 detectedType= QueryLogType.JSON;
             } else {
-                parser = new StandardParser(path);
+                parser = new StandardLogParser(path);
                 detectedType= QueryLogType.STANDARD;
             }
         } else {
