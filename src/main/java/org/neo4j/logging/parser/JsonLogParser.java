@@ -26,6 +26,17 @@ public class JsonLogParser implements LogLineParser{
         return Files.readString(this.filename).lines().map(line -> lineToMap(line));
     }
 
+    public long count() throws IOException {
+        return Files.readString(this.filename).lines().count();
+    }
+
+    public Map<?, ?> getAt(long index) throws IOException {
+        return  Files.readString(this.filename).lines().skip(index - 1).findFirst()
+                .map(line -> lineToMap(line))
+                .get();
+    }
+
+
     private Map<?,?> lineToMap(String line) {
         try {
             Map<String,Object> tmp = mapper.readValue(line, Map.class);

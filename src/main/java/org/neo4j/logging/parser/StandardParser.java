@@ -28,7 +28,7 @@ public class StandardParser implements LogLineParser {
                     "(?:id:(?<id>\\d+) - )?" +
                     "(?<elapsed>\\d+) ms: " +
                     "(?:\\(planning: (?<planning>\\d+)(?:, cpu: (?<cpu>\\d+))?, waiting: (?<waiting>\\d+)\\) - )?" +
-                    "(?:(?<allocatedBytes>\\d+) B - )?" +
+                    "(?:(?<allocatedBytes>[-\\d]+) B - )?" +
                     "(?:(?<pageHits>\\d+) page hits, (?<pageFaults>\\d+) page faults - )?" +
                     "(?<source>embedded-session\\t|bolt-session[^>]*>|server-session(?:\\t[^\\t]*){3})\\t" +
                     "(?<database>[^\\s]+) - " +
@@ -70,8 +70,24 @@ public class StandardParser implements LogLineParser {
     public Stream<Map<?,?>> parse() throws IOException {
        // return Files.readString(this.filename).lines().map(line -> lineToMap(line));
       //  return Arrays.stream(Files.readString(this.filename).split(REGEX_LOG_ENTRY_START)).map(line -> lineToMap(line));
-      return  Pattern.compile(LOG_ENTRY_SPLITTER).splitAsStream(Files.readString(this.filename)).map(line -> lineToMap(line));
+      return  split().map(line -> lineToMap(line));
     }
+
+    public long count() throws IOException {
+        return  split().count();
+    }
+
+    private  Stream<String> split() throws IOException {
+        return  Pattern.compile(LOG_ENTRY_SPLITTER).splitAsStream(Files.readString(this.filename));
+    }
+
+    public Map<?, ?> getAt(long index) throws IOException {
+        return  split().skip(index - 1).findFirst()
+                .map(line -> lineToMap(line))
+                .get();
+    }
+
+
 
 
     private Map<?,?> lineToMap(String line) {
