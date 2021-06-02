@@ -22,7 +22,7 @@
                 <hashTree/>
                 <BoltSampler guiclass="TestBeanGUI" testclass="BoltSampler" testname="$boltSampler.name" enabled="true">
                     <stringProp name="accessMode">WRITE</stringProp>
-                    <stringProp name="database">$boltSampler.database</stringProp>
+                    <stringProp name="database">$esc.xml($boltSampler.database)</stringProp>
                     <stringProp name="cypher">$esc.xml($boltSampler.query)</stringProp>
                     <stringProp name="params">$esc.xml($boltSampler.queryParameters)</stringProp>
                     <boolProp name="recordQueryResults">true</boolProp>

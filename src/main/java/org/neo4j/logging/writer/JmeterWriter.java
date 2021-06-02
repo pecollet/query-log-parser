@@ -119,7 +119,7 @@ public class JmeterWriter {
         private int txTimeout;
 
         public BoltSamplerData(String time, String database, String query, Map<?,?> parameters) {
-            this.database=database;
+            this.database=database.equals("<none>") ? "" : database;
             this.query=query;
             this.name= (query.length() > 25) ? query.substring(0,24)+"..." : query;
             try {
