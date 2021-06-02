@@ -7,4 +7,8 @@ import java.util.stream.Stream;
 public interface LogLineParser {
 
     public Stream<Map<?,?>> parse() throws IOException;
+
+    public long count() throws IOException;
+
+    public Map<?, ?> getAt(long index) throws IOException;
 }

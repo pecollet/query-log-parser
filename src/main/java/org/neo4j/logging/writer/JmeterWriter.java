@@ -35,13 +35,12 @@ public class JmeterWriter {
         this.parser=parser;
         //get log start and end times
         try {
-            this.logStartTime=parser.parse().findFirst().get()
-                        .get("time").toString();
-            long count = parser.parse().count();
+            this.logStartTime=parser.getAt(1).get("time").toString();
+            System.out.println("[log start time : "+this.logStartTime+"]");
+            long count = parser.count();
             System.out.println("[log lines read : "+count+"]");
-            this.logEndTime=parser.parse()
-                        .skip(count - 1).findFirst().get()
-                        .get("time").toString();
+            this.logEndTime=parser.getAt(count).get("time").toString();
+            System.out.println("[log end time : "+this.logEndTime+"]");
         } catch(IOException e) {
             e.printStackTrace();
             System.exit(2);
@@ -120,7 +119,7 @@ public class JmeterWriter {
         private int txTimeout;
 
         public BoltSamplerData(String time, String database, String query, Map<?,?> parameters) {
-            this.database=database;
+            this.database=database.equals("<none>") ? "" : database;
             this.query=query;
             this.name= (query.length() > 25) ? query.substring(0,24)+"..." : query;
             try {
