@@ -4,7 +4,7 @@ Allows generating JMeter test plans to replay queries.
 
 ## Usage
 ```
-usage: java -cp query-log-parser-1.0-SNAPSHOT.jar org.neo4j.logging.parser.QueryLogParser 
+usage: query-log-parser.sh 
 -i,--input <query.log>    query.log file path
 -o,--output <output_file>   output [json|jmeter|hc|standard]
 ```
