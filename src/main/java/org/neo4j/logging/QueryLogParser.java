@@ -62,7 +62,7 @@ public class QueryLogParser {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("java -cp query-log-parser-1.0-SNAPSHOT.jar org.neo4j.logging.parser.QueryLogParser", options, true);
+            formatter.printHelp("query-log-parser.sh", options, true);
             System.exit(1);
         }
         String inputFile = cmd.getOptionValue("input");
