@@ -171,7 +171,7 @@ public class QueryLogParser {
                     .forEach(m -> {
                         try {
                             Files.write(outputFilePath,
-                                    writer.writeLine(m).getBytes(StandardCharsets.UTF_8),
+                                    writer.writeLine((Map<String, Object>) m).getBytes(StandardCharsets.UTF_8),
                                     StandardOpenOption.APPEND
                             );
                         } catch (IOException e) {
