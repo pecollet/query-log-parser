@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class StandardParser implements LogLineParser {
+public class StandardLogParser implements LogLineParser {
     private Path filename;
     private static final ObjectMapper mapper = new ObjectMapper(); //json mapper to parse "json" fields (ex: query parameters)
 
@@ -63,7 +63,8 @@ public class StandardParser implements LogLineParser {
             new AbstractMap.SimpleEntry<>(19, "failureReason") )
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     int[] integerFields= {5,6,7,8,9,10,11};
-    StandardParser(Path filename) {
+
+    public StandardLogParser(Path filename) {
         this.filename=filename;
     }
 

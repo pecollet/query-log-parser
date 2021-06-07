@@ -1,0 +1,13 @@
+2021-05-15 19:44:31.788+0000 INFO  Query started: id:1 - 546 ms: 0 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58882	server/127.0.0.1:7627>	neo4j -  - CREATE (:Test) - {context: {address: 'localhost:7617'}, database: <null>} - runtime=null - {}
+2021-05-15 19:44:32.704+0000 INFO  id:1 - 1463 ms: 136 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58882	server/127.0.0.1:7627>	neo4j -  - CREATE (:Test) - {context: {address: 'localhost:7617'}, database: <null>} - runtime=pipelined - {}
+2021-05-15 19:44:39.102+0000 INFO  Query started: id:2 - 54 ms: 0 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58884	server/127.0.0.1:7627>	neo4j -  - MATCH (n:Test) RETURN n - {} - runtime=null - {}
+2021-05-15 19:44:39.226+0000 INFO  id:2 - 178 ms: 136 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58884	server/127.0.0.1:7627>	neo4j -  - MATCH (n:Test) RETURN n - {} - runtime=pipelined - {}
+2021-05-15 19:44:47.175+0000 ERROR id:3 - 8 ms: 0 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58887	server/127.0.0.1:7627>	<none> -  - MATCH (n:Error) GJFSGJHFDJHSG n - {} - runtime=null - {} - Invalid input 'GJFSGJHFDJHSG': expected
+2021-05-15 19:44:53.356+0000 INFO  Query started: id:4 - 45 ms: 0 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58890	server/127.0.0.1:7627>	neo4j -  - CALL db.ping() - {} - runtime=null - {}
+2021-05-15 19:44:53.417+0000 INFO  id:4 - 106 ms: 136 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58890	server/127.0.0.1:7627>	neo4j -  - CALL db.ping() - {} - runtime=pipelined - {}
+2021-05-15 19:44:53.455+0000 INFO  Query started: id:5 - 11 ms: 0 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58890	server/127.0.0.1:7627>	neo4j -  - MATCH (n:Multiline)
+ RETURN n; - {} - runtime=null - {}
+2021-05-15 19:44:53.476+0000 INFO  id:5 - 32 ms: 136 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58890	server/127.0.0.1:7627>	neo4j -  - MATCH (n:Multiline)
+ RETURN n; - {} - runtime=pipelined - {}
+2021-05-15 19:45:00.428+0000 INFO  Query started: id:6 - 10 ms: 0 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58894	server/127.0.0.1:7627>	neo4j -  - CALL db.checkpoint() - {name: 'match', desc: <null>} - runtime=null - {}
+2021-05-15 19:45:02.365+0000 INFO  id:6 - 1946 ms: 136 B - bolt-session	bolt	neo4j-cypher-shell/v4.3.0-drop04.0		client/127.0.0.1:58894	server/127.0.0.1:7627>	neo4j -  - CALL db.checkpoint() - {} - runtime=pipelined - {}

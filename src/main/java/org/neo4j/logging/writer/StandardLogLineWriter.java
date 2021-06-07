@@ -5,24 +5,25 @@ import java.util.Map;
 public class StandardLogLineWriter implements LogLineWriter {
 
 
-    public String writeLine(Map<?,?> map) {
-        String eventString=getEventString(map.get("event").toString());
+    public String writeLine(Map<String,Object> map) {
+        String eventString=getEventString(map.getOrDefault("event", "").toString());
         String reasonString=map.get("failureReason") == null ? "" : " - "+map.get("failureReason");
-        return  map.get("time")+" "+
-                map.get("level")+" "+
+        return  map.getOrDefault("time", "1970-01-01 00:00:00.000+0000")+" "+
+                map.getOrDefault("level", "INFO")+" "+
                 eventString+
-                "id:"+map.get("id")+" - "+
-                map.get("elapsedTimeMs")+" ms: "+
-                map.get("allocatedBytes")+" B - "+
-                map.get("source")+"\t"+
-                map.get("database")+" - "+
-                map.get("user")+" - "+
-                map.get("query")+" - "+
-                map.get("queryParameters")+" - "+  //TODO : should be like "- {name: 'match', desc: <null>} -" but is "- {context={address=localhost:7617}, database=<null>} -" // c.f. QueryLogFormatter.formatMapValue (: -> = and single-quote string values)
+                "id:"+map.getOrDefault("id", "0")+" - "+
+                map.getOrDefault("elapsedTimeMs", "0")+" ms: "+
+                map.getOrDefault("allocatedBytes","0")+" B - "+
+                map.getOrDefault("source", "embedded-session")+"\t"+
+                map.getOrDefault("database", "<none>")+" - "+
+                map.getOrDefault("user", "")+" - "+
+                map.getOrDefault("query", "")+" - "+
+                map.getOrDefault("queryParameters", "{}")+" - "+  //TODO : should be like "- {name: 'match', desc: <null>} -" but is "- {context={address=localhost:7617}, database=<null>} -" // c.f. QueryLogFormatter.formatMapValue (: -> = and single-quote string values)
                 "runtime="+map.get("runtime")+" - "+
-                map.get("annotationData")+
+                map.getOrDefault("annotationData", "{}")+
                 reasonString+
                 "\n" ;
+
         //TODO : add other fields (plannign, cpu, waiting, pageHits, pageFaults)
     }
 

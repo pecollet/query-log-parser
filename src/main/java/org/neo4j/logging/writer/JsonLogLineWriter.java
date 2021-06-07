@@ -2,9 +2,7 @@ package org.neo4j.logging.writer;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.util.Map;
 
@@ -21,7 +19,7 @@ public class JsonLogLineWriter implements LogLineWriter {
     //TODO : currently writing proper JSON, all the way, including in the queryParameters field
     // c.f. QueryLogFormatter.formatMapValue
     //TODO : order of fields is random ; use mapper.addMixIn(HashMap.class, ReOrderMixIn.class);
-    public String writeLine(Map<?,?> map) {
+    public String writeLine(Map<String, Object> map) {
         try{
             return mapper.writeValueAsString(map)+'\n';
         } catch (JsonProcessingException e) {
