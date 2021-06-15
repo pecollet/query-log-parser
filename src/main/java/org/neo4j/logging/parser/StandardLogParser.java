@@ -106,7 +106,7 @@ public class StandardLogParser implements LogLineParser {
                     if (matcher.group(i) != null) {
                         value = "start";
                     } else {
-                        value = matcher.group(2) == "INFO" ? "success" : "fail";
+                        value = "INFO".equals(matcher.group(2)) ? "success" : "fail";
                     }
                     map.put(regexGroupNames.get(i), value);
                 } else if (ArrayUtils.contains(integerFields, i)) {  //integer fields
@@ -121,6 +121,7 @@ public class StandardLogParser implements LogLineParser {
                 }
             }
             map.put("type", "query");
+            map.put("raw", line);
         } else {
             System.out.println("No match found : " + line);
         }

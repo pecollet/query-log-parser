@@ -41,6 +41,7 @@ public class JsonLogParser implements LogLineParser{
         try {
             Map<String,Object> tmp = mapper.readValue(line, Map.class);
             Util.parseJsonStringValues(tmp, mapper);
+            tmp.put("raw", line);
             return tmp;
         } catch (JsonProcessingException e) {
             System.out.println("Error while parsing line : "+line);
