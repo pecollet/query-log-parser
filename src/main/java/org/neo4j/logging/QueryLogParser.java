@@ -4,10 +4,7 @@ import org.apache.commons.cli.*;
 import org.neo4j.logging.parser.JsonLogParser;
 import org.neo4j.logging.parser.LogLineParser;
 import org.neo4j.logging.parser.StandardLogParser;
-import org.neo4j.logging.writer.JmeterWriter;
-import org.neo4j.logging.writer.JsonLogLineWriter;
-import org.neo4j.logging.writer.LogLineWriter;
-import org.neo4j.logging.writer.StandardLogLineWriter;
+import org.neo4j.logging.writer.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -110,7 +107,14 @@ public class QueryLogParser {
                 }
                 break;
             case HC:
-                //TODO : Health check output
+                try {
+                    new HealthCheckWriter(logLineParser)
+                            .parse()
+                            .write(outputFilePath, 10);
+                } catch(IOException e) {
+                    e.printStackTrace();
+                    System.exit(2);
+                }
                 break;
         }
 

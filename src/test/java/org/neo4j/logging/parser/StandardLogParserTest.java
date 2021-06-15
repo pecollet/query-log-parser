@@ -16,6 +16,10 @@ public class StandardLogParserTest {
         Assertions.assertEquals("2021-05-15 19:44:31.788+0000", parser.getAt(1).get("time").toString());
         Assertions.assertEquals("2021-05-15 19:45:00.428+0000", parser.getAt(10).get("time").toString());
         Assertions.assertEquals("ERROR", parser.getAt(5).get("level"));
+        Assertions.assertEquals("INFO", parser.getAt(1).get("level"));
+        Assertions.assertEquals("start", parser.getAt(1).get("event"));
+        Assertions.assertEquals("success", parser.getAt(2).get("event"));
+        Assertions.assertEquals("fail", parser.getAt(5).get("event"));
 
         parser.parse().forEach(e -> {
             Assertions.assertEquals(Integer.class, e.get("elapsedTimeMs").getClass());
