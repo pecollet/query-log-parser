@@ -106,6 +106,10 @@ public class HealthCheckWriter {
         private long failedCount=0;
         private double totalFailedTimeMillis=0;
 
+        private LinkedHashMap<String, Long> protocols=new LinkedHashMap<>();
+        private LinkedHashMap<String, Long> drivers=new LinkedHashMap<>();
+        private LinkedHashMap<String, Long> clients=new LinkedHashMap<>();
+
         private BoundedPriorityQueue<Map> topKSuccessfulQueries;
         private BoundedPriorityQueue<Map> topKFailedQueries;
 
@@ -122,12 +126,44 @@ public class HealthCheckWriter {
             String event = logEntry.get("event").toString();
             if ("success".equals(event)) {
                 this.topKSuccessfulQueries.add(logEntry);
-            } else {
+            } else if ("fail".equals(event)) {
                 this.topKFailedQueries.add(logEntry);
             }
             addQueryTime((Integer)logEntry.get("elapsedTimeMs"), event);
-        }
 
+            addCountsPerType(logEntry.get("source").toString());
+        }
+        private void addCountsPerType(String source) {
+            Map<String, String> sourceMap=splitSource(source);
+
+            if (sourceMap.containsKey("protocol")) {
+                String protocol= sourceMap.get("protocol");
+                Long count = this.protocols.get(protocol);
+                if (count == null) {
+                    this.protocols.put(protocol, 1L);
+                } else {
+                    this.protocols.put(protocol, count + 1);
+                }
+            }
+            if (sourceMap.containsKey("client")) {
+                String client= sourceMap.get("client");
+                Long count = this.clients.get(client);
+                if (count == null) {
+                    this.clients.put(client, 1L);
+                } else {
+                    this.clients.put(client, count + 1);
+                }
+            }
+            if (sourceMap.containsKey("driver")) {
+                String driver= sourceMap.get("driver");
+                Long count = this.drivers.get(driver);
+                if (count == null) {
+                    this.drivers.put(driver, 1L);
+                } else {
+                    this.drivers.put(driver, count + 1);
+                }
+            }
+        }
         private void addQueryTime(long queryTime, String event) {
             if ("success".equals(event)) {
                 this.count++;
@@ -157,6 +193,15 @@ public class HealthCheckWriter {
                 output += "queryErrorAvg=" + (1.0 * this.totalFailedTimeMillis / this.failedCount) + '\n';
             }
             output+="queryLogErrors="+hasErrors+'\n';
+
+            String types_labels = String.join(",", this.protocols.keySet());
+            String types_counts = String.join(",", this.protocols.values().toString());
+            String clients_labels = String.join(",", this.drivers.keySet());
+            String clients_counts = String.join(",", this.drivers.values().toString());
+            output+="clients_labels="+clients_labels+'\n';
+            output+="clients_counts="+clients_counts+'\n';
+            output+="types_labels="+types_labels+'\n';
+            output+="types_counts="+types_counts+'\n';
 
             for (int i=0; i<this.topK ; i++) {
                 Map q = this.topKSuccessfulQueries.poll();
@@ -225,25 +270,11 @@ public class HealthCheckWriter {
                     (Integer)logEntry.get("pageFaults"));
         }
         private void addSource(String source) {
-            String protocol="";
-            String client="";
-            String driver="";
-            if (source.startsWith("embedded-session")) {
-                //embedded-session
-                protocol="embedded";
-            } else if (source.startsWith("server-session")) {
-                //server-session	http	10.176.6.112	/db/vzbulh202012/tx/commit
-                protocol=source.split("\t")[1];
-                client=source.split("\t")[2];
-            } else {
-                //bolt-session	bolt	neo4j-python/4.1.1 Python/3.6.8-final-0 (linux)		client/10.176.6.112:57788	server/10.176.6.33:7687>
-                protocol=source.split("\t")[1];
-                driver=source.split("\t")[2];
-                client=source.split("\t")[4].replaceFirst("^client/", "");
-            }
-            if (protocol != "") this.protocols.add(protocol);
-            if (client != "") this.clients.add(client);
-            if (driver != "") this.drivers.add(driver);
+            Map<String, String> sourceMap=splitSource(source);
+
+            if (sourceMap.containsKey("protocol")) this.protocols.add(sourceMap.get("protocol"));
+            if (sourceMap.containsKey("client")) this.clients.add(sourceMap.get("client"));
+            if (sourceMap.containsKey("driver")) this.drivers.add(sourceMap.get("driver"));
         }
 
         private void addLogTime(long logTime) {
@@ -329,5 +360,23 @@ public class HealthCheckWriter {
         }
         public long getTotalMillis() {return this.totalMillis;}
 
+    }
+
+    private static Map<String, String> splitSource(String source) {
+        Map<String, String> tmp = new HashMap<>();
+        if (source.startsWith("embedded-session")) {
+            //embedded-session
+            tmp.put("protocol","embedded");
+        } else if (source.startsWith("server-session")) {
+            //server-session	http	10.176.6.112	/db/vzbulh202012/tx/commit
+            tmp.put("protocol",source.split("\t")[1]);
+            tmp.put("client",source.split("\t")[2]);
+        } else {
+            //bolt-session	bolt	neo4j-python/4.1.1 Python/3.6.8-final-0 (linux)		client/10.176.6.112:57788	server/10.176.6.33:7687>
+            tmp.put("protocol",source.split("\t")[1]);
+            tmp.put("driver",source.split("\t")[2]);
+            tmp.put("client",source.split("\t")[4].replaceFirst("^client/", ""));
+        }
+        return tmp;
     }
 }
