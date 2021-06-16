@@ -2,6 +2,7 @@ package org.neo4j.logging.writer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.chain.web.MapEntry;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -17,12 +18,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.filtering;
 import static java.util.stream.Collectors.groupingBy;
 
 public class JmeterWriter {
-    private int maxThreads=100;
-    private int maxQueries=10000;
+    private JMeterConfig config;
+
     private LogLineParser parser;
     private String logStartTime;
     private long logStartTimeLong;
@@ -30,32 +33,32 @@ public class JmeterWriter {
     private long timeSpanMillis;
     private List<ThreadGroupData> threadGroups=new ArrayList<>();
     private static final ObjectMapper mapper = new ObjectMapper();
+    private long discardedQueries=0;
+    private long discardedThreads=0;
 
     public JmeterWriter(LogLineParser parser) {
         this.parser=parser;
         //get log start and end times
         try {
-            this.logStartTime=parser.getAt(1).get("time").toString();
-            System.out.println("[log start time : "+this.logStartTime+"]");
             long count = parser.count();
-            System.out.println("[log lines read : "+count+"]");
+            System.out.println("[file log lines  : "+count+"]");
+            this.logStartTime=parser.getAt(1).get("time").toString();
+            System.out.println("[file start time : "+this.logStartTime+"]");
             this.logEndTime=parser.getAt(count).get("time").toString();
-            System.out.println("[log end time : "+this.logEndTime+"]");
+            System.out.println("[file end time   : "+this.logEndTime+"]");
         } catch(IOException e) {
             e.printStackTrace();
             System.exit(2);
         }
         this.logStartTimeLong=Util.toEpoch(this.logStartTime);
         this.timeSpanMillis=Util.toEpoch(this.logEndTime) - this.logStartTimeLong;
-        System.out.println("[time span : "+this.timeSpanMillis+" ms]");
+        System.out.println("[file time span  : "+this.timeSpanMillis+" ms]");
     }
 
-    public JmeterWriter withMaxThreads(int maxThreads) {
-        this.maxThreads=maxThreads;
-        return this;
-    }
-    public JmeterWriter withMaxQueries(int maxQueries) {
-        this.maxQueries=maxQueries;
+    public JmeterWriter withConfig(Map<String, Object> config) {
+        this.config=new JMeterConfig(config);
+        System.out.println("[max Queries             : "+this.config.maxQueries+"]");
+        System.out.println("[max Threads groups      : "+this.config.maxThreads+"]");
         return this;
     }
 
@@ -64,29 +67,45 @@ public class JmeterWriter {
             .filter(line -> "start".equals(line.get("event")))          //filter: Query started, bolt, INFO????
             //.filter(line -> "INFO".equals(line.get("level")))
             .filter(line -> line.get("source").toString().startsWith("bolt-session"))
-            .limit(this.maxQueries)                                     //apply limit
+            .limit(this.config.maxQueries)                                     //apply limit
             .collect(groupingBy(line -> line.get("source").toString())) //group by source
             .forEach((k,v)-> createThreadGroup(k,v));                   //create Thread groups
 
         return this;
     }
     private void createThreadGroup(String key, List<Map<?, ?>> value) {
-        if (this.threadGroups.size() < this.maxThreads) {  //TODO : find way to limit upstream (in the collector)
+        if (this.threadGroups.size() < this.config.maxThreads) {  //TODO : find way to limit upstream (in the collector)
             ThreadGroupData tg = new ThreadGroupData(key);
             String firstTime = value.get(0).get("time").toString();
             tg.setStartTime(firstTime);
             for (Map<?, ?> queryMap : value) {
                 BoltSamplerData bs = new BoltSamplerData(queryMap.get("time").toString(), queryMap.get("database").toString(),
-                        queryMap.get("query").toString(), (Map)queryMap.get("queryParameters"));
+                        queryMap.get("query").toString(), (Map)queryMap.get("queryParameters"), this.config);
                 tg.addBoltSampler(bs);
             }
             this.threadGroups.add(tg);
+        } else {
+            this.discardedQueries+=value.size();
+            this.discardedThreads++;
         }
     }
 
 
     public void write(Path outputFilePath) {
-        System.out.println("[threads : "+this.threadGroups.size()+"]");
+        System.out.println("[Output thread groups    : "+this.threadGroups.size()+"]");
+        System.out.println("[Thread limit - discarded thread groups/queries : "+this.discardedThreads+"/"+this.discardedQueries+"]");
+
+        long outputQueryCount = this.threadGroups.stream().map(tg -> tg.getQueries().size()).collect(Collectors.summingInt(Integer::intValue));
+        System.out.println("[Output Bolt samplers    : "+outputQueryCount+"]");
+
+        //period covered start timestamp, end timestamps, duration with speed factor
+        Optional<Long> startTime = this.threadGroups.stream().map(tg -> tg.getQueries().get(0).startTime).min(Long::compare);
+        Optional<Long> endTime =this.threadGroups.stream().map(tg -> tg.getQueries().get(tg.getQueries().size()-1).startTime).max(Long::compare);
+        System.out.println("[Test plan start : "+Util.epochToTimestamp(startTime.orElse(0L))+"]");
+        System.out.println("[Test plan end   : "+Util.epochToTimestamp(endTime.orElse(0L))+"]");
+        long duration=endTime.orElse(0L)-startTime.orElse(0L);
+        System.out.println("[Test plan duration (s)  : "+ duration / (1000 * config.speedFactor) +" (with x"+config.speedFactor+")]");
+
         ToolManager velocityToolManager = new ToolManager();
         velocityToolManager.configure("src/velocity-tools.xml");
 
@@ -117,19 +136,25 @@ public class JmeterWriter {
         private String timerComment;
         private long threadDelay;
         private int txTimeout;
+        private String recordQueryResults;
+        private String accessMode;
+        private double speedFactor;
 
-        public BoltSamplerData(String time, String database, String query, Map<?,?> parameters) {
+        public BoltSamplerData(String time, String database, String query, Map<?,?> parameters, JMeterConfig config) {
             this.database=database.equals("<none>") ? "" : database;
             this.query=query;
-            this.name= (query.length() > 25) ? query.substring(0,24)+"..." : query;
+            this.name= (query.length() > config.samplerNameMaxLength) ? query.substring(0,config.samplerNameMaxLength-1)+"..." : query;
             try {
                 this.queryParameters=mapper.writeValueAsString(parameters); //Util.formatJson(parameters);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
                 this.queryParameters="Error parsing json";
             }
-            this.txTimeout=60;
+            this.txTimeout=config.samplerTxTimeout;
             this.startTime=Util.toEpoch(time);
+            this.accessMode=config.samplerAccessMode;
+            this.recordQueryResults=config.samplerRecordQueryResults;
+            this.speedFactor= config.speedFactor;
         }
 
         public String getName() {
@@ -184,7 +209,7 @@ public class JmeterWriter {
         }
 
         public void setThreadDelay(long threadDelay) {
-            this.threadDelay = threadDelay;
+                this.threadDelay = (long)Math.ceil(threadDelay / this.speedFactor);
         }
 
         public int getTxTimeout() {
@@ -193,6 +218,22 @@ public class JmeterWriter {
 
         public void setTxTimeout(int txTimeout) {
             this.txTimeout = txTimeout;
+        }
+
+        public String getRecordQueryResults() {
+            return recordQueryResults;
+        }
+
+        public void setRecordQueryResults(String recordQueryResults) {
+            this.recordQueryResults = recordQueryResults;
+        }
+
+        public String getAccessMode() {
+            return accessMode;
+        }
+
+        public void setAccessMode(String accessMode) {
+            this.accessMode = accessMode;
         }
     }
 
@@ -273,6 +314,47 @@ public class JmeterWriter {
 
         public void setQueries(ArrayList<BoltSamplerData> queries) {
             this.queries = queries;
+        }
+    }
+
+    private class JMeterConfig {
+        private int maxThreads=100;
+        private int maxQueries=10000;
+        private double speedFactor=1;
+        private Map filters;
+
+        private int samplerNameMaxLength=25;
+        private int samplerTxTimeout=60;
+        private String samplerAccessMode="WRITE";
+        private String samplerRecordQueryResults="true";
+
+        public JMeterConfig() {}
+        public JMeterConfig(Map<String, Object> configMap) {
+            configMap.entrySet().stream().forEach(me-> {
+                String key=me.getKey().toString();
+                Object value=me.getValue();
+                if ( "speedFactor".equals(key)) {
+                    this.speedFactor=(double)value;
+                }
+                if ( "maxThreads".equals(key)) {
+                    this.maxThreads=(int)value;
+                }
+                if ( "maxQueries".equals(key)) {
+                    this.maxQueries=(int)value;
+                }
+                if ( "samplerNameMaxLength".equals(key)) {
+                    this.samplerNameMaxLength=(int)value;
+                }
+                if ( "samplerTxTimeout".equals(key)) {
+                    this.samplerTxTimeout=(int)value;
+                }
+                if ( "samplerAccessMode".equals(key)) {
+                    this.samplerAccessMode=(String)value;
+                }
+                if ( "samplerRecordQueryResults".equals(key)) {
+                    this.samplerRecordQueryResults=(String)value;
+                }
+            });
         }
     }
 }

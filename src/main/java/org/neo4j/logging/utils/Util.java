@@ -4,9 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonSyntaxException;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class Util {
 
@@ -14,6 +18,12 @@ public class Util {
         DateTimeFormatter dtf  = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSZ");
         ZonedDateTime zdt  = ZonedDateTime.parse(timeDateStr, dtf);
         return zdt.toInstant().toEpochMilli();
+    }
+    public static String epochToTimestamp(long epoch) {
+        Date date = new Date(epoch);
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        format.setTimeZone(TimeZone.getTimeZone("Etc/UTC"));
+        return format.format(date);
     }
 
 

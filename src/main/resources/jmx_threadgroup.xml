@@ -21,11 +21,11 @@
                 </ConstantTimer>
                 <hashTree/>
                 <BoltSampler guiclass="TestBeanGUI" testclass="BoltSampler" testname="$boltSampler.name" enabled="true">
-                    <stringProp name="accessMode">WRITE</stringProp>
+                    <stringProp name="accessMode">$boltSampler.accessMode</stringProp>
                     <stringProp name="database">$esc.xml($boltSampler.database)</stringProp>
                     <stringProp name="cypher">$esc.xml($boltSampler.query)</stringProp>
                     <stringProp name="params">$esc.xml($boltSampler.queryParameters)</stringProp>
-                    <boolProp name="recordQueryResults">true</boolProp>
+                    <boolProp name="recordQueryResults">$boltSampler.recordQueryResults</boolProp>
                     <intProp name="txTimeout">$boltSampler.txTimeout</intProp>
                 </BoltSampler>
                 <hashTree/>
