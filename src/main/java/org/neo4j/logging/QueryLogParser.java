@@ -96,9 +96,13 @@ public class QueryLogParser {
                 translate(outputFilePath, logLineParser, logLineWriter);
                 break;
             case JMETER:
+                HashMap<String, Object> config = new HashMap<>();
+                config.put("maxQueries", 100000);
+                config.put("maxThreads", 200);
+                config.put("speedFactor", 2.3);
                 try {
                     new JmeterWriter(logLineParser)
-                            .withMaxQueries(1000)
+                            .withConfig(config)
                             .parse()
                             .write(outputFilePath);
                 } catch(IOException e) {
