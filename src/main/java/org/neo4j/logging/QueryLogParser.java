@@ -48,11 +48,16 @@ public class QueryLogParser {
         output.setRequired(true);
         options.addOption(output);
 
-        //TODO : add options
-        // all : allow multiple input files (-i <dir> and we fetch all query.log* in it)
-        // all : expose query limit
-        // JMETER : speed-up/down, compress quiet times
-        // JMETER : expose thread limit
+        options.addOption(new Option("s", "jmeter-speed", true,  "multiplier applied to all time intervals to speed up/slow down the JMeter replay (default:1)"));
+        options.addOption(new Option("q", "query-limit", true,  "limit to the number of queries to consider (default:1000)"));
+        options.addOption(new Option("t", "jmeter-max-threads", true,  "limit to the number of JMeter thread groups to create (default:100)"));
+        options.addOption(new Option("snl", "jmeter-sampler-name-length", true,  "max length of Bolt Sampler (default:25)"));
+        options.addOption(new Option("sto", "jmeter-sampler-tx-timeout", true,  "transaction timeout in seconds (default:60)"));
+        options.addOption(new Option("sam", "jmeter-sampler-access-mode", true,  "Access mode for tests against a cluster [READ|WRITE] (default=WRITE)"));
+        options.addOption(new Option("srr", "jmeter-sampler-record-results", true,  "whether the Bolt response should be recorded by the Sampler [true|false] (default:true)"));
+
+        //TODO : allow multiple input files (-i <dir> and we fetch all query.log* in it)
+        // apply limit to all
 
 
         try {
@@ -96,10 +101,7 @@ public class QueryLogParser {
                 translate(outputFilePath, logLineParser, logLineWriter);
                 break;
             case JMETER:
-                HashMap<String, Object> config = new HashMap<>();
-                config.put("maxQueries", 100000);
-                config.put("maxThreads", 200);
-                config.put("speedFactor", 2.3);
+                HashMap<String, Object> config = cmdLineOptionsToJmeterConfig();
                 try {
                     new JmeterWriter(logLineParser)
                             .withConfig(config)
@@ -123,7 +125,31 @@ public class QueryLogParser {
         }
 
     }
+    private static HashMap<String, Object> cmdLineOptionsToJmeterConfig() {
+        HashMap<String, Object> config = new HashMap<>();
 
+        String maxQueries = cmd.getOptionValue("query-limit");
+        config.put("maxQueries", maxQueries == null ? 1000 : Integer.valueOf(maxQueries));
+
+        String samplerNameMaxLength = cmd.getOptionValue("jmeter-sampler-name-length");
+        config.put("samplerNameMaxLength", samplerNameMaxLength == null ? 25 : Integer.valueOf(samplerNameMaxLength));
+
+        String maxThreads = cmd.getOptionValue("jmeter-max-threads");
+        config.put("maxThreads", maxThreads == null ? 100 : Integer.valueOf(maxThreads));
+
+        String speed = cmd.getOptionValue("jmeter-speed");
+        config.put("speedFactor", speed == null ? 1.0 : Double.valueOf(speed));
+
+        String samplerTxTimeout = cmd.getOptionValue("jmeter-sampler-tx-timeout");
+        config.put("samplerTxTimeout", samplerTxTimeout == null ? 60 : Integer.valueOf(samplerTxTimeout));
+
+        String samplerAccessMode = cmd.getOptionValue("jmeter-sampler-access-mode");
+        config.put("samplerAccessMode", samplerAccessMode == null ? "WRITE" : samplerAccessMode);
+
+        String samplerRecordQueryResults = cmd.getOptionValue("jmeter-sampler-record-results");
+        config.put("samplerRecordQueryResults", samplerRecordQueryResults == null ? "true" : samplerRecordQueryResults);
+        return config;
+    }
     private static LogLineParser selectParser(Path path) {
         Optional<String> firstLine=Optional.empty();
         QueryLogType detectedType=QueryLogType.STANDARD;
