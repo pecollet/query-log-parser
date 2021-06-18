@@ -31,5 +31,5 @@ The feature aims to generate a valid test plan xml file, with :
 - samplerNameMaxLength <integer> : max length of Bolt Sampler "test name" (default=25). The Bolt Sampler is named with the truncated cypher query. That helps distinguish queries in JMeter listeners.
 - samplerTxTimeout <integer> : transaction timeout in seconds, used by the JMeter's Neo4j driver (default=60). Applies to all samplers.
 - samplerAccessMode READ|WRITE : Access mode for tests against a cluster (default=WRITE). Applies to all samplers.
-- samplerRecordQueryResults true|false : whether the Bolt response should be record by the Sampler (default=true). Slows tests down, but helps debug. Applies to all samplers.
+- samplerRecordQueryResults true|false : whether the Bolt response should be recorded by the Sampler (default=true). Slows tests down, but helps debug. Applies to all samplers.
 - [TODO] filters <some format> : filters on various fields (database, user, timestamp, duration, protocol, client, driver, metadata, regex against cypher) to select/exclude specific queries
