@@ -22,7 +22,7 @@ public class JsonLogParser implements LogLineParser{
         this.filename=filename;
     }
 
-    public Stream<Map<?,?>> parse() throws IOException {
+    public Stream<Map<String, Object>> parse() throws IOException {
         return Files.readString(this.filename).lines().map(line -> lineToMap(line));
     }
 
@@ -30,14 +30,14 @@ public class JsonLogParser implements LogLineParser{
         return Files.readString(this.filename).lines().count();
     }
 
-    public Map<?, ?> getAt(long index) throws IOException {
+    public Map<String, Object> getAt(long index) throws IOException {
         return  Files.readString(this.filename).lines().skip(index - 1).findFirst()
                 .map(line -> lineToMap(line))
                 .get();
     }
 
 
-    private Map<?,?> lineToMap(String line) {
+    private Map<String, Object> lineToMap(String line) {
         try {
             Map<String,Object> tmp = mapper.readValue(line, Map.class);
             Util.parseJsonStringValues(tmp, mapper);
