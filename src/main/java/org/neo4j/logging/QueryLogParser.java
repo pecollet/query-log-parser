@@ -1,6 +1,7 @@
 package org.neo4j.logging;
 
 import org.apache.commons.cli.*;
+import org.neo4j.logging.aura.AuraGcloudLoggingParser;
 import org.neo4j.logging.parser.JsonLogParser;
 import org.neo4j.logging.parser.LogLineParser;
 import org.neo4j.logging.parser.StandardLogParser;
@@ -12,6 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class QueryLogParser {
@@ -35,12 +38,13 @@ public class QueryLogParser {
 
     private static LogLineWriter logLineWriter;
     private static Path outputFilePath;
+    private static Pattern aura_url_pattern = Pattern.compile("^neo4j\\+s://(?<dbid>[a-f0-9]+)\\.databases\\.neo4j\\.io$");
 
 
     public static void main(String[] args) {
 
         //process arguments
-        Option input = new Option("i", "input", true, "path of the query.log file to process");
+        Option input = new Option("i", "input", true, "path of the query.log file to process. For Aura, the connection URL (ex: neo4j+s://ffffffff.databases.neo4j.io).");
         input.setRequired(true);
         options.addOption(input);
 
@@ -56,6 +60,7 @@ public class QueryLogParser {
         options.addOption(new Option("sam", "jmeter-sampler-access-mode", true,  "Access mode for tests against a cluster [READ|WRITE] (default=WRITE)"));
         options.addOption(new Option("srr", "jmeter-sampler-record-results", true,  "whether the Bolt response should be recorded by the Sampler [true|false] (default:true)"));
 
+        options.addOption(new Option("p", "aura-project", true,  "Name of the GCloud project / AWS account"));
         //TODO : allow multiple input files (-i <dir> and we fetch all query.log* in it)
         // apply limit to all
 
@@ -70,11 +75,28 @@ public class QueryLogParser {
         String inputFile = cmd.getOptionValue("input");
         OutputFormat outputOption = OutputFormat.valueOf(cmd.getOptionValue("output").toUpperCase(Locale.ROOT));
 
-        //open input file
-        System.out.println("Loading file : "+inputFile+"...");
-        Path inputFilePath = Path.of(inputFile);
-        LogLineParser logLineParser=selectParser(inputFilePath);
-        String outputFile=outputFileName(inputFile, outputOption);
+        Matcher matcher = aura_url_pattern.matcher(inputFile);
+        LogLineParser logLineParser=null;
+        String auraDbId=null;
+        String outputFile="tmp";
+
+        if (matcher.find()) {
+            auraDbId=matcher.group("dbid");
+            try {
+                logLineParser = new AuraGcloudLoggingParser("project", "key", auraDbId);
+            } catch (Exception e) {
+                System.out.println("Failed to connect to GCP Logging");
+                //e.printStackTrace();
+                System.exit(2);
+            }
+            outputFile=outputFileName(auraDbId, outputOption);
+        } else {
+            //open input file
+            System.out.println("Loading file : "+inputFile+"...");
+            Path inputFilePath = Path.of(inputFile);
+            logLineParser=selectParser(inputFilePath);
+            outputFile=outputFileName(inputFile, outputOption);
+        }
 
         //create output file
         try {
@@ -107,7 +129,7 @@ public class QueryLogParser {
                             .withConfig(config)
                             .parse()
                             .write(outputFilePath);
-                } catch(IOException e) {
+                } catch(Exception e) {
                     e.printStackTrace();
                     System.exit(2);
                 }
@@ -117,7 +139,7 @@ public class QueryLogParser {
                     new HealthCheckWriter(logLineParser)
                             .parse()
                             .write(outputFilePath, 10);
-                } catch(IOException e) {
+                } catch(Exception e) {
                     e.printStackTrace();
                     System.exit(2);
                 }
@@ -182,10 +204,10 @@ public class QueryLogParser {
         String outputFileName="";
         switch (outputOption) {
             case JSON:
-                outputFileName= inputFile.replaceFirst("\\.log$",".json.log");
+                outputFileName= inputFile.replaceFirst("\\.log$",".json")+".log";
                 break;
             case STANDARD:
-                outputFileName= inputFile.replaceFirst("\\.log$",".std.log");
+                outputFileName= inputFile.replaceFirst("\\.log$",".std")+".log";
                 break;
             case JMETER:
                 outputFileName= inputFile+".jmx";
@@ -212,7 +234,7 @@ public class QueryLogParser {
                             e.printStackTrace();
                         }
                     });
-        } catch(IOException e) {
+        } catch(Exception e) {
             e.printStackTrace();
             System.exit(4);
         }

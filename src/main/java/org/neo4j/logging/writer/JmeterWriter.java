@@ -46,7 +46,7 @@ public class JmeterWriter {
             System.out.println("[file start time : "+this.logStartTime+"]");
             this.logEndTime=parser.getAt(count).get("time").toString();
             System.out.println("[file end time   : "+this.logEndTime+"]");
-        } catch(IOException e) {
+        } catch(Exception e) {
             e.printStackTrace();
             System.exit(2);
         }
@@ -62,7 +62,7 @@ public class JmeterWriter {
         return this;
     }
 
-    public JmeterWriter parse() throws IOException  {
+    public JmeterWriter parse() throws Exception  {
         parser.parse()
             .filter(line -> "start".equals(line.get("event")))          //filter: Query started, bolt, INFO????
             //.filter(line -> "INFO".equals(line.get("level")))
