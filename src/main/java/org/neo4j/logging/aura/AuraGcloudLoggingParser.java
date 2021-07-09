@@ -5,6 +5,7 @@ import com.google.api.gax.paging.Page;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.OAuth2Credentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.logging.LogEntry;
 import com.google.cloud.logging.Logging;
@@ -15,6 +16,7 @@ import org.neo4j.logging.parser.LogLineParser;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -25,14 +27,43 @@ public class AuraGcloudLoggingParser implements LogLineParser {
     private String dbid;
     private String authKeyFile = "/path/to/my/key.json";
     private LoggingOptions options;
+    private static final String BACKGROUND_QUERY_FILTER=" -\"CALL aura.activity.last()\" " +
+            " -\"CALL dbms.routing.getRoutingTable\" " +
+            " -\"CALL dbms.components()\" " +
+            " -\"CALL dbms.showCurrentUser()\" " +
+            " -\"CALL dbms.clientConfig()\" " +
+            " -\"SHOW DATABASES\" " +
+            " -\"CALL dbms.cluster.role\" " +
+            " -\"CALL db.labels() YIELD label\" " +
+            " -\"CALL db.indexes()\" " +
+            " -\"CALL dbms.procedures\" ";
 
     public AuraGcloudLoggingParser(String projectId, String authKeyFile, String dbid) throws IOException {
         this.projectId = projectId;
         this.authKeyFile = authKeyFile;
         this.dbid = dbid;
+        System.out.println("Connecting to database '"+dbid+"' on GCP project '"+projectId+"'...");
+
         //TODO : deal with authentication to GCP
-        Credentials credentials = ServiceAccountCredentials.fromStream(new FileInputStream(this.authKeyFile));
-        //Credentials credentials = GoogleCredentials.create(new AccessToken(accessToken, expirationTime));
+        // 1. Service Account : need IAM rights
+        //  You are missing at least one of the following required permissions:
+        //      Project
+        //          iam.serviceAccounts.create
+        // => service-account-file.json
+        // 2. OAuth
+        //  You are missing at least one of the following required permissions:
+        //      Project
+        //          clientauthconfig.brands.get
+        //          oauthconfig.testusers.get
+        //          oauthconfig.verification.get
+        //          resourcemanager.projects.get
+        //  => client_secrets.json
+        //  scope:  https://www.googleapis.com/auth/logging.read
+
+        //Credentials credentials = ServiceAccountCredentials.fromStream(new FileInputStream(this.authKeyFile));
+        //Credentials credentials = OAuth2Credentials.create()
+        //Credentials credentials =  GoogleCredentials.create(new AccessToken(accessToken, expirationTime));
+        Credentials credentials = GoogleCredentials.getApplicationDefault();
 
         this.options = LoggingOptions.newBuilder()//getDefaultInstance();
                 .setProjectId(this.projectId)
@@ -40,43 +71,41 @@ public class AuraGcloudLoggingParser implements LogLineParser {
                 .build();
     }
 
+    //dbid
+    //extraFilter examples
+    //  " timestamp > \"2021-07-09T15\" "
+    //  " jsonPayload.event!=\"start\" "
     public Stream<LogEntry> getLogEntries(String dbid, String extraFilter) throws Exception {
-        String filter="jsonPayload.dbid=\""+dbid+"\" ";
+        String filter="logName=projects/" + this.options.getProjectId() + "/logs/neo4j-query"
+                        +" AND  jsonPayload.dbid=\""+dbid+"\" ";
         filter+=extraFilter;
-//        jsonPayload.event!="start"
-//        -"CALL aura.activity.last()"
-//        -"CALL dbms.routing.getRoutingTable"
-//        -"CALL dbms.components()"
-//        -"CALL dbms.showCurrentUser()"
-//        -"CALL dbms.clientConfig()"
-//        -"SHOW DATABASES"
-//        -"CALL dbms.cluster.role"
-//        -"CALL db.labels() YIELD label"
-//        -"CALL db.indexes()"
-//        -"CALL dbms.procedures"
+        //filter+=" AND "+BACKGROUND_QUERY_FILTER;
 
         try(Logging logging = this.options.getService()) {
             Page<LogEntry> entries = logging.listLogEntries(
-                    EntryListOption.filter("logName=projects/" + this.options.getProjectId() + "/logs/neo4j-query"
-                            + " AND " + filter));
-            //Iterator<LogEntry> entryIterator = entries.iterateAll().iterator();
-//            do {
-//                for (LogEntry logEntry : entries.iterateAll()) {
-//                    System.out.println(logEntry);
-//                }
-//                entries = entries.getNextPage();
-//            } while (entries != null);
-            return StreamSupport.stream(entries.iterateAll().spliterator(), false);
+                    EntryListOption.filter(filter),
+                    EntryListOption.pageSize(1000));
+
+            Stream<LogEntry> allEntriesStream=Stream.of();
+            do {
+                allEntriesStream = Stream.concat(allEntriesStream, StreamSupport.stream(entries.iterateAll().spliterator(), false));
+                System.out.println("Has next page : "+entries.hasNextPage());
+                //TODO: fix pagination
+                //currently getting "INVALID_ARGUMENT: page_token doesn't match arguments from the request"
+                entries = entries.getNextPage();
+            } while (entries != null);
+            return allEntriesStream;
         }
     }
 
     private Map<?,?> mapGCloudLogEntry(LogEntry le) {
         Map<String, Object> map = new HashMap<>();
         map.put("type", "query");
-        map.put("raw", le.toString());
-        //TODO : get the data
+        //map.put("raw", le.toString());
+
         Map<String, Object> payload = le.<Payload.JsonPayload>getPayload().getDataAsMap();
         map.putAll(payload);
+        //System.out.println(map.toString());
 //        "username": "neo4j",
 //        "elapsedTimeMs": 10,
 //        "id": "235001",

@@ -82,11 +82,16 @@ public class QueryLogParser {
 
         if (matcher.find()) {
             auraDbId=matcher.group("dbid");
+            String project = cmd.getOptionValue("aura-project");
+            if (project == null) {
+                System.out.println("Please specify a GCP project with option -p.");
+                System.exit(2);
+            }
             try {
-                logLineParser = new AuraGcloudLoggingParser("project", "key", auraDbId);
+                logLineParser = new AuraGcloudLoggingParser(project, "key", auraDbId);
             } catch (Exception e) {
                 System.out.println("Failed to connect to GCP Logging");
-                //e.printStackTrace();
+                e.printStackTrace();
                 System.exit(2);
             }
             outputFile=outputFileName(auraDbId, outputOption);
@@ -216,7 +221,7 @@ public class QueryLogParser {
                 outputFileName= inputFile+".hc.properties";
                 break;
         }
-        System.out.println("Output file :"+outputFileName);
+        System.out.println("Output file : "+outputFileName);
         return outputFileName;
     }
 
