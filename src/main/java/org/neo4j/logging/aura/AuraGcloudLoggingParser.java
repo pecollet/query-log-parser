@@ -13,6 +13,7 @@ import com.google.cloud.logging.LoggingOptions;
 import com.google.cloud.logging.Logging.EntryListOption;
 import com.google.cloud.logging.Payload;
 import org.neo4j.logging.parser.LogLineParser;
+import org.neo4j.logging.utils.Util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,7 +27,9 @@ public class AuraGcloudLoggingParser implements LogLineParser {
     private String projectId;
     private String dbid;
     private String authKeyFile = "/path/to/my/key.json";
+    private String filter="";
     private LoggingOptions options;
+    private Logging logging;
     private static final String BACKGROUND_QUERY_FILTER=" -\"CALL aura.activity.last()\" " +
             " -\"CALL dbms.routing.getRoutingTable\" " +
             " -\"CALL dbms.components()\" " +
@@ -38,9 +41,10 @@ public class AuraGcloudLoggingParser implements LogLineParser {
             " -\"CALL db.indexes()\" " +
             " -\"CALL dbms.procedures\" ";
 
-    public AuraGcloudLoggingParser(String projectId, String authKeyFile, String dbid) throws IOException {
+    public AuraGcloudLoggingParser(String projectId, String filter, String dbid) throws IOException {
         this.projectId = projectId;
-        this.authKeyFile = authKeyFile;
+        //this.authKeyFile = authKeyFile;
+        this.filter=filter;
         this.dbid = dbid;
         System.out.println("Connecting to database '"+dbid+"' on GCP project '"+projectId+"'...");
 
@@ -69,6 +73,7 @@ public class AuraGcloudLoggingParser implements LogLineParser {
                 .setProjectId(this.projectId)
                 .setCredentials(credentials)
                 .build();
+        this.logging= this.options.getService();
     }
 
     //dbid
@@ -81,30 +86,38 @@ public class AuraGcloudLoggingParser implements LogLineParser {
         filter+=extraFilter;
         //filter+=" AND "+BACKGROUND_QUERY_FILTER;
 
-        try(Logging logging = this.options.getService()) {
+//        try(Logging logging = this.options.getService()) {
             Page<LogEntry> entries = logging.listLogEntries(
                     EntryListOption.filter(filter),
                     EntryListOption.pageSize(1000));
-
-            Stream<LogEntry> allEntriesStream=Stream.of();
-            do {
-                allEntriesStream = Stream.concat(allEntriesStream, StreamSupport.stream(entries.iterateAll().spliterator(), false));
-                System.out.println("Has next page : "+entries.hasNextPage());
-                //TODO: fix pagination
-                //currently getting "INVALID_ARGUMENT: page_token doesn't match arguments from the request"
-                entries = entries.getNextPage();
-            } while (entries != null);
-            return allEntriesStream;
-        }
+//            int i=0;
+//            for (LogEntry entry : entries.iterateAll()) {
+//                System.out.println(i++ + ":"+entry.getInsertId());
+//            }
+            return StreamSupport.stream(entries.iterateAll().spliterator(), false);
+//            Stream<LogEntry> allEntriesStream=Stream.of();
+//            do {
+//                allEntriesStream = Stream.concat(allEntriesStream, StreamSupport.stream(entries.iterateAll().spliterator(), false));
+//                System.out.println("Has next page : "+entries.hasNextPage() +" ("+ entries.getNextPageToken()+")");
+//                //TODO: fix pagination
+//                //currently getting "INVALID_ARGUMENT: page_token doesn't match arguments from the request"
+//                entries = entries.getNextPage();
+//            } while (entries != null);
+//            System.out.println("Completed");
+//            return allEntriesStream;
+//        }
     }
 
     private Map<?,?> mapGCloudLogEntry(LogEntry le) {
         Map<String, Object> map = new HashMap<>();
         map.put("type", "query");
         //map.put("raw", le.toString());
+        map.put("time", Util.epochToTimestamp(le.getTimestamp()));
+        map.put("level",le.getSeverity());
 
         Map<String, Object> payload = le.<Payload.JsonPayload>getPayload().getDataAsMap();
         map.putAll(payload);
+        map.put("raw",le.toString());
         //System.out.println(map.toString());
 //        "username": "neo4j",
 //        "elapsedTimeMs": 10,
@@ -128,14 +141,15 @@ public class AuraGcloudLoggingParser implements LogLineParser {
     }
 
     public Stream<Map<?,?>> parse() throws Exception {
-        return getLogEntries(this.dbid, "").map(le -> mapGCloudLogEntry(le));
+            return getLogEntries(this.dbid, this.filter).map(le -> mapGCloudLogEntry(le));
     };
 
     public long count() throws Exception {
-        return getLogEntries(this.dbid, "").count();
+            return getLogEntries(this.dbid, this.filter).count();
+
     };
 
     public Map<?, ?> getAt(long index) throws Exception {
-        return getLogEntries(this.dbid, "").skip(index - 1).findFirst().map(le -> mapGCloudLogEntry(le)).get();
+            return getLogEntries(this.dbid, this.filter).skip(index - 1).findFirst().map(le -> mapGCloudLogEntry(le)).get();
     };
 }
