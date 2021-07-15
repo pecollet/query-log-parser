@@ -21,7 +21,7 @@ public class Util {
     }
     public static String epochToTimestamp(long epoch) {
         Date date = new Date(epoch);
-        DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
         format.setTimeZone(TimeZone.getTimeZone("Etc/UTC"));
         return format.format(date);
     }

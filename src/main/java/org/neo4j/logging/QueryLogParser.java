@@ -88,7 +88,7 @@ public class QueryLogParser {
                 System.exit(2);
             }
             try {
-                logLineParser = new AuraGcloudLoggingParser(project, " AND timestamp > \"2021-07-14T17\" ", auraDbId);
+                logLineParser = new AuraGcloudLoggingParser(project, " AND timestamp > \"2021-07-15T19\" ", auraDbId);
             } catch (Exception e) {
                 System.out.println("Failed to connect to GCP Logging");
                 e.printStackTrace();

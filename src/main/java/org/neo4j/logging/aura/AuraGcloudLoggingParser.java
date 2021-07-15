@@ -18,6 +18,7 @@ import org.neo4j.logging.utils.Util;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -113,10 +114,12 @@ public class AuraGcloudLoggingParser implements LogLineParser {
         map.put("type", "query");
         //map.put("raw", le.toString());
         map.put("time", Util.epochToTimestamp(le.getTimestamp()));
-        map.put("level",le.getSeverity());
+        map.put("level",le.getSeverity().name());
 
         Map<String, Object> payload = le.<Payload.JsonPayload>getPayload().getDataAsMap();
         map.putAll(payload);
+        String[] doubleValues={"allocatedBytes", "elapsedTimeMs", "pageHits", "pageFaults"}; // those need to be turned into integers
+        map.replaceAll((key, value) ->  (Arrays.asList(doubleValues).contains(key)) ? ((Double) value).intValue() : value );
         map.put("raw",le.toString());
         //System.out.println(map.toString());
 //        "username": "neo4j",
