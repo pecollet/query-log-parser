@@ -31,15 +31,14 @@ public class StandardLogParser implements LogLineParser {
                     "(?:(?<allocatedBytes>[-\\d]+) B - )?" +
                     "(?:(?<pageHits>\\d+) page hits, (?<pageFaults>\\d+) page faults - )?" +
                     "(?<source>embedded-session\\t|bolt-session[^>]*>|server-session(?:\\t[^\\t]*){3})\\t" +
-                    "(?<database>[^\\s]+) - " +
-                    "(?<user>[^\\s]*) - " +    //* instead of +
+                    "(?:(?<database>[^\\s]+) - )?" +   //3.5 doesn't have a db field
+                    "(?<user>[^\\s]*) - " +             //* instead of + as it could unauthenticated
                     "(?<query>.+?(?= - ))" +
                     "(?: - (?<params>\\{.*?(?=} - )}))?" +
                     "(?: - runtime=(?<runtime>\\w+))? - " +
-                    "(?<additional>\\{.+?(?=(?:$| - )))" +
-                    "(?: - (?<reason>.*$))?$" , Pattern.DOTALL);
+                    "(?<additional>\\{.+?(?=(?:$| - | Failed| At )))" +  // sometimes the error doesn't come after a " - "
+                    "(?:(?: - )?(?<reason>.*$))?$" , Pattern.DOTALL);
     private static final String LOG_ENTRY_SPLITTER ="\n(?=\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}[+-]\\d{4} )";
-    //private static final Pattern LOGGER_LINE_BEGINNING = Pattern.compile( REGEX_LOG_ENTRY_START );
 
     private static final Map<Integer, String> regexGroupNames= Stream.of(
             new AbstractMap.SimpleEntry<>(1, "time"),
@@ -68,7 +67,7 @@ public class StandardLogParser implements LogLineParser {
         this.filename=filename;
     }
 
-    public Stream<Map<?,?>> parse() throws IOException {
+    public Stream<Map<String, Object>> parse() throws IOException {
        // return Files.readString(this.filename).lines().map(line -> lineToMap(line));
       //  return Arrays.stream(Files.readString(this.filename).split(REGEX_LOG_ENTRY_START)).map(line -> lineToMap(line));
       return  split().map(line -> lineToMap(line));
@@ -82,7 +81,7 @@ public class StandardLogParser implements LogLineParser {
         return  Pattern.compile(LOG_ENTRY_SPLITTER).splitAsStream(Files.readString(this.filename));
     }
 
-    public Map<?, ?> getAt(long index) throws IOException {
+    public Map<String, Object> getAt(long index) throws IOException {
         return  split().skip(index - 1).findFirst()
                 .map(line -> lineToMap(line))
                 .get();
@@ -91,7 +90,7 @@ public class StandardLogParser implements LogLineParser {
 
 
 
-    private Map<?,?> lineToMap(String line) {
+    private Map<String, Object> lineToMap(String line) {
        // System.out.println(">> "+line);
         //TODO : deal with multiline entries
         Map<String, Object> map = new HashMap<>();
