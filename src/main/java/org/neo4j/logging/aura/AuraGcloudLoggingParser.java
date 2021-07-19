@@ -109,7 +109,7 @@ public class AuraGcloudLoggingParser implements LogLineParser {
 //        }
     }
 
-    private Map<?,?> mapGCloudLogEntry(LogEntry le) {
+    private Map<String, Object> mapGCloudLogEntry(LogEntry le) {
         Map<String, Object> map = new HashMap<>();
         map.put("type", "query");
         //map.put("raw", le.toString());
@@ -143,7 +143,7 @@ public class AuraGcloudLoggingParser implements LogLineParser {
         return map;
     }
 
-    public Stream<Map<?,?>> parse() throws Exception {
+    public Stream<Map<String, Object>> parse() throws Exception {
             return getLogEntries(this.dbid, this.filter).map(le -> mapGCloudLogEntry(le));
     };
 
@@ -152,7 +152,7 @@ public class AuraGcloudLoggingParser implements LogLineParser {
 
     };
 
-    public Map<?, ?> getAt(long index) throws Exception {
+    public Map<String, Object> getAt(long index) throws Exception {
             return getLogEntries(this.dbid, this.filter).skip(index - 1).findFirst().map(le -> mapGCloudLogEntry(le)).get();
     };
 }

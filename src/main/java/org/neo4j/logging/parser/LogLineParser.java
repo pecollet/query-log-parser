@@ -7,12 +7,12 @@ import java.util.stream.Stream;
 public interface LogLineParser {
 
 
-    public Stream<Map<String, Object>> parse() throws IOException;
+    public Stream<Map<String, Object>> parse() throws Exception;
 
 
     public long count() throws Exception;
 
 
-    public Map<String, Object> getAt(long index) throws IOException;
+    public Map<String, Object> getAt(long index) throws Exception;
 
 }
