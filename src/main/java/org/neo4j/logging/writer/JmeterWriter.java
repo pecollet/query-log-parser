@@ -35,6 +35,7 @@ public class JmeterWriter {
     private static final ObjectMapper mapper = new ObjectMapper();
     private long discardedQueries=0;
     private long discardedThreads=0;
+    private boolean useQueryStarts=true;
 
     public JmeterWriter(LogLineParser parser) {
         this.parser=parser;
@@ -46,6 +47,11 @@ public class JmeterWriter {
             System.out.println("[file start time : "+this.logStartTime+"]");
             this.logEndTime=parser.getAt(count).get("time").toString();
             System.out.println("[file end time   : "+this.logEndTime+"]");
+            long starts = parser.parse().limit(20).filter(line -> "start".equals(line.get("event"))).count();
+            if (starts == 0) {
+                System.out.println("[no query starts found]");
+                this.useQueryStarts=false;
+            }
         } catch(Exception e) {
             e.printStackTrace();
             System.exit(2);
@@ -64,28 +70,28 @@ public class JmeterWriter {
 
     public JmeterWriter parse() throws Exception  {
         parser.parse()
-            .filter(line -> "start".equals(line.get("event")))          //filter: Query started, bolt, INFO????
+            .filter(line -> this.useQueryStarts ? "start".equals(line.get("event")) : true)          //filter: Query started, bolt, INFO????
             //.filter(line -> "INFO".equals(line.get("level")))
             .filter(line -> line.get("source").toString().startsWith("bolt-session"))
-            .limit(this.config.maxQueries)                                     //apply limit
-            .collect(groupingBy(line -> line.get("source").toString())) //group by source
-            .forEach((k,v)-> createThreadGroup(k,v));                   //create Thread groups
+            .limit(this.config.maxQueries)                                      //apply limit
+            .collect(groupingBy(line -> line.get("source").toString()))         //group by source
+            .forEach((src,listOfEntries)-> createThreadGroup(src, listOfEntries));  //create Thread groups
 
         return this;
     }
-    private void createThreadGroup(String key, List<Map<?, ?>> value) {
+    private void createThreadGroup(String source, List<Map<String, Object>> listOfEntries) {
         if (this.threadGroups.size() < this.config.maxThreads) {  //TODO : find way to limit upstream (in the collector)
-            ThreadGroupData tg = new ThreadGroupData(key);
-            String firstTime = value.get(0).get("time").toString();
+            ThreadGroupData tg = new ThreadGroupData(source);
+            String firstTime = listOfEntries.get(0).get("time").toString();
             tg.setStartTime(firstTime);
-            for (Map<?, ?> queryMap : value) {
-                BoltSamplerData bs = new BoltSamplerData(queryMap.get("time").toString(), queryMap.get("database").toString(),
+            for (Map<String, Object> queryMap : listOfEntries) {
+                BoltSamplerData bs = new BoltSamplerData(queryMap.get("time").toString(), queryMap.getOrDefault("database", "").toString(),
                         queryMap.get("query").toString(), (Map)queryMap.get("queryParameters"), this.config);
                 tg.addBoltSampler(bs);
             }
             this.threadGroups.add(tg);
         } else {
-            this.discardedQueries+=value.size();
+            this.discardedQueries+=listOfEntries.size();
             this.discardedThreads++;
         }
     }
