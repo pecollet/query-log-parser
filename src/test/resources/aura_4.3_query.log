@@ -1,0 +1,90 @@
+[
+  {
+    "insertId": "mz5boryq648bdws",
+    "jsonPayload": {
+      "allocatedBytes": -1,
+      "annotationData": "{}",
+      "database": "system",
+      "dbid": "99999999",
+      "elapsedTimeMs": 2,
+      "event": "success",
+      "id": "12567",
+      "message": "CALL dbms.routing.getRoutingTable($routingContext, $databaseName)",
+      "neo4jcloud.environment": "production",
+      "neo4jcloud.role": "database",
+      "neo4jversion": "4.3.0-drop04-3",
+      "pageFaults": 0,
+      "pageHits": 0,
+      "podname": "neo4j-core-99999999-6-0",
+      "query": "CALL dbms.routing.getRoutingTable($routingContext, $databaseName)",
+      "runtime": "system",
+      "source": "bolt-session\tbolt\tneo4j-browser/v4.3.3\t\tclient/10.1.12.3:49698\tserver/10.1.4.64:17687>",
+      "type": "query",
+      "username": "neo4jodl"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "neo4j-core-99999999-6-0",
+      "dbid": "99999999"
+    },
+    "logName": "projects/xxxxx/logs/neo4j-query",
+    "receiveTimestamp": "2021-09-22T08:30:00.957531345Z",
+    "resource": {
+      "labels": {
+        "cluster_name": "production-orch-0049",
+        "container_name": "",
+        "instance_id": "1234567890",
+        "namespace_id": "",
+        "pod_id": "",
+        "project_id": "xxxxx",
+        "zone": "asia-south1-c"
+      },
+      "type": "container"
+    },
+    "severity": "INFO",
+    "timestamp": "2021-09-22T08:29:59.913Z"
+  },
+  {
+    "insertId": "mz5boryq648bdwr",
+    "jsonPayload": {
+      "allocatedBytes": 0,
+      "annotationData": "{}",
+      "database": "system",
+      "dbid": "99999999",
+      "elapsedTimeMs": 2,
+      "event": "start",
+      "id": "1234",
+      "message": "CALL dbms.routing.getRoutingTable($routingContext, $databaseName)",
+      "neo4jcloud.environment": "production",
+      "neo4jcloud.role": "database",
+      "neo4jversion": "4.3.0-drop04-3",
+      "pageFaults": 0,
+      "pageHits": 0,
+      "podname": "neo4j-core-99999999-6-0",
+      "query": "CALL dbms.routing.getRoutingTable($routingContext, $databaseName)",
+      "runtime": "system",
+      "source": "bolt-session\tbolt\tneo4j-browser/v4.3.3\t\tclient/10.1.12.3:49698\tserver/10.1.4.64:17687>",
+      "type": "query",
+      "username": "neo4j"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "neo4j-core-99999999-6-0",
+      "dbid": "99999999"
+    },
+    "logName": "projects/xxxxx/logs/neo4j-query",
+    "receiveTimestamp": "2021-09-22T08:30:00.957531345Z",
+    "resource": {
+      "labels": {
+        "cluster_name": "production-orch-0049",
+        "container_name": "",
+        "instance_id": "1234567890",
+        "namespace_id": "",
+        "pod_id": "",
+        "project_id": "xxxxx",
+        "zone": "asia-south1-c"
+      },
+      "type": "container"
+    },
+    "severity": "INFO",
+    "timestamp": "2021-09-22T08:29:59.912Z"
+  }
+]
