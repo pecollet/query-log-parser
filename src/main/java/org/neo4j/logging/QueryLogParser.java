@@ -1,6 +1,7 @@
 package org.neo4j.logging;
 
 import org.apache.commons.cli.*;
+import org.neo4j.logging.aura.AuraFileLoggingParser;
 import org.neo4j.logging.aura.AuraGcloudLoggingParser;
 import org.neo4j.logging.parser.JsonLogParser;
 import org.neo4j.logging.parser.LogLineParser;
@@ -22,7 +23,8 @@ public class QueryLogParser {
     public enum QueryLogType
     {
         JSON,
-        STANDARD
+        STANDARD,
+        AURA
     }
     public enum OutputFormat
     {
@@ -189,9 +191,12 @@ public class QueryLogParser {
             System.exit(2);
         }
         if (firstLine.isPresent()) {
-            if (firstLine.get().startsWith("{")) {
+            if (firstLine.get().startsWith("{")) {          //4.3+ json format
                 parser = new JsonLogParser(path);
-                detectedType= QueryLogType.JSON;
+                detectedType = QueryLogType.JSON;
+            } else if (firstLine.get().startsWith("[")) {   //aura query.logs
+                parser = new AuraFileLoggingParser(path);
+                detectedType = QueryLogType.AURA;
             } else {
                 parser = new StandardLogParser(path);
                 detectedType= QueryLogType.STANDARD;
