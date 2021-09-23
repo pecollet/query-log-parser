@@ -52,7 +52,7 @@ public class JmeterWriter {
                 System.out.println("[no query starts found]");
                 this.useQueryStarts=false;
             }
-        } catch(IOException e) {
+        } catch(Exception e) {
             e.printStackTrace();
             System.exit(2);
         }
@@ -68,7 +68,7 @@ public class JmeterWriter {
         return this;
     }
 
-    public JmeterWriter parse() throws IOException  {
+    public JmeterWriter parse() throws Exception  {
         parser.parse()
             .filter(line -> this.useQueryStarts ? "start".equals(line.get("event")) : true)          //filter: Query started, bolt, INFO????
             //.filter(line -> "INFO".equals(line.get("level")))

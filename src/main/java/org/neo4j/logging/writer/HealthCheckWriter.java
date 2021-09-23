@@ -28,9 +28,9 @@ public class HealthCheckWriter {
         this.globalStats=new GlobalStats(5, 2000, 10000);
     }
 
-    public HealthCheckWriter parse() throws IOException {
+    public HealthCheckWriter parse() throws Exception {
         parser.parse()
-                .filter(line -> "success".equals(line.get("event").toString()))
+                .filter(line -> "success".equals(line.get("event").toString()) || "commit".equals(line.get("event").toString()))
                 //.collect(groupingBy(line -> line.get("database").toString() + "_" + line.get("query").toString())) //group by db+query
                 .forEach(logEntry -> addToStats(logEntry));
         return this;
@@ -124,7 +124,7 @@ public class HealthCheckWriter {
         }
         public void addQuery(Map logEntry) {
             String event = logEntry.get("event").toString();
-            if ("success".equals(event)) {
+            if ("success".equals(event) || "commit".equals(event)) {
                 this.topKSuccessfulQueries.add(logEntry);
             } else if ("fail".equals(event)) {
                 this.topKFailedQueries.add(logEntry);
