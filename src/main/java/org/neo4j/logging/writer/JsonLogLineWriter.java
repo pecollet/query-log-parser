@@ -61,7 +61,7 @@ public class JsonLogLineWriter implements LogLineWriter {
                 public int compare(Object o1, Object o2) {
                     String k1 = ((Map.Entry) (o1)).getKey().toString();
                     String k2 = ((Map.Entry) (o2)).getKey().toString();
-                    return fieldOrder.get(k1).compareTo(fieldOrder.get(k2));
+                    return fieldOrder.getOrDefault(k1, 999).compareTo(fieldOrder.getOrDefault(k2, 999));
                 }
             });
         //copying the sorted list in HashMap to preserve the iteration order
