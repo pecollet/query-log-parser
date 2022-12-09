@@ -13,6 +13,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,6 +68,8 @@ public class QueryLogParser {
         options.addOption(new Option("srr", "jmeter-sampler-record-results", true,  "whether the Bolt response should be recorded by the Sampler [true|false] (default:true)"));
 
         options.addOption(new Option("p", "aura-project", true,  "Name of the GCloud project / AWS account"));
+        options.addOption(new Option("start", "aura-start-time", true,  "Start timestamp, in the 'YYYY-MM-DD HH:MM:SS' format, UTC time. Default to 5min ago."));
+        options.addOption(new Option("end", "aura-end-time", true,  "End timestamp, in the 'YYYY-MM-DD HH:MM:SS' format, UTC time. Defaults to now."));
         //TODO : allow multiple input files (-i <dir> and we fetch all query.log* in it)
         // apply limit to all
 
@@ -89,14 +96,35 @@ public class QueryLogParser {
                 System.out.println("Please specify a GCP project with option -p.");
                 System.exit(2);
             }
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            String start_ts=cmd.getOptionValue("aura-start-time");
+            String end_ts=cmd.getOptionValue("aura-end-time");
+            if (start_ts == null && end_ts != null) {  //both null is ok
+                    System.out.println("Start time required if end time is specified.");
+                    System.exit(2);
+            }
+            if (end_ts == null) { //default to now
+                Instant instant = Instant.now ();
+                ZonedDateTime zdt = ZonedDateTime.ofInstant ( instant , ZoneId.of ( "UTC" ) );
+                end_ts = zdt.format(formatter);
+                if (start_ts == null) { //default to 5min ago
+                    start_ts = zdt.minus ( 5 , ChronoUnit.MINUTES ).format(formatter);
+                }
+            }
+            if (end_ts.compareTo(start_ts) < 0) {
+                System.out.println("Start time should be before end time.");
+                System.exit(2);
+            }
             try {
-                logLineParser = new AuraGcloudLoggingParser(project, " AND timestamp > \"2021-07-15T19\" ", auraDbId);
+                System.out.println("Requesting Aura logs from "+start_ts+" to "+end_ts);
+                //" AND timestamp > \"2022-11-16T11\" AND timestamp <= \"2022-11-16T12\""
+                logLineParser = new AuraGcloudLoggingParser(project, String.format(" AND timestamp > \"%s\" AND timestamp <= \"%s\"", start_ts.replace(' ', 'T'), end_ts.replace(' ', 'T')), auraDbId);
             } catch (Exception e) {
                 System.out.println("Failed to connect to GCP Logging");
                 e.printStackTrace();
                 System.exit(2);
             }
-            outputFile=outputFileName(auraDbId, outputOption);
+            outputFile=outputFileName(String.format("%s_%s_%s",auraDbId, start_ts.replaceAll("[-: ]", ""), end_ts.replaceAll("[-: ]", "")), outputOption);
         } else {
             //open input file
             System.out.println("Loading file : "+inputFile+"...");
