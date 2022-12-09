@@ -11,6 +11,11 @@ usage: query-log-parser.sh
 
 query.log can be in standard or json format (dbms.logs.query.format=json in neo4j 4.3). Format is auto-detected.
 
+ex:
+```
+./query-log-parser.sh -i "neo4j+s://dbid.databases.neo4j.io" -o standard -p "aws-aura-customer"
+```
+
 **outputs** 
 * json : query.log in json format ("_inputfile_.json.log")
 * standard : query.log in standard format ("_inputfile_.std.log")
