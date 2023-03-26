@@ -8,7 +8,7 @@ import org.neo4j.logging.parser.LogLineParser;
 import org.neo4j.logging.parser.StandardLogParser;
 import org.neo4j.logging.writer.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -259,16 +259,13 @@ public class QueryLogParser {
     }
 
     private static void translate(Path outputFilePath, LogLineParser parser, LogLineWriter writer) {
-        try {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(String.valueOf(outputFilePath)))) {
             //logLineParser.parse().forEach(e-> System.out.println(e));
             parser.parse()
                     .forEach(m -> {
                         try {
-                            Files.write(outputFilePath,
-                                    writer.writeLine((Map<String, Object>) m).getBytes(StandardCharsets.UTF_8),
-                                    StandardOpenOption.APPEND
-                            );
-                        } catch (IOException e) {
+                            bw.write(writer.writeLine((Map<String, Object>) m));
+                        } catch(IOException e) {
                             e.printStackTrace();
                         }
                     });
