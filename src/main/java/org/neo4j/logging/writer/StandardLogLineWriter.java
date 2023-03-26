@@ -7,13 +7,17 @@ public class StandardLogLineWriter implements LogLineWriter {
 
     public String writeLine(Map<String,Object> map) {
         String eventString=getEventString(map.getOrDefault("event", "").toString());
+        String cpuStats=map.get("planning") == null ? "" :"(planning: "+map.get("planning")+", waiting: "+map.get("waiting")+") - ";
+        String pageCacheStats=map.get("pageHits") == null ? "" : map.get("pageHits")+" page hits, "+map.get("pageFaults")+" page faults - ";
         String reasonString=map.get("failureReason") == null ? "" : " - "+map.get("failureReason");
         return  map.getOrDefault("time", "1970-01-01 00:00:00.000+0000")+" "+
                 map.getOrDefault("level", "INFO")+" "+
                 eventString+
                 "id:"+map.getOrDefault("id", "0")+" - "+
                 map.getOrDefault("elapsedTimeMs", "0")+" ms: "+
+                cpuStats +
                 map.getOrDefault("allocatedBytes","0")+" B - "+
+                pageCacheStats +
                 map.getOrDefault("source", "embedded-session")+"\t"+
                 map.getOrDefault("database", "<none>")+" - "+
                 map.getOrDefault("user", "")+" - "+
