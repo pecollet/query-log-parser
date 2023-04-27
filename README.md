@@ -5,8 +5,8 @@ Allows generating JMeter test plans to replay queries.
 ## Usage
 ```
 usage: query-log-parser.sh 
--i,--input <query.log>              path of the query.log file to process. For Aura, the connection URL (ex: neo4j+s://ffffffff.databases.neo4j.io)
--o,--output <output_file>           output [json|jmeter|standard]
+-i,--input <query.log>                            path of the query.log file to process. For Aura, the connection URL (ex: neo4j+s://ffffffff.databases.neo4j.io)
+-o,--output [json|jmeter|standard]                output type
 
 -start <YYYY-MM-DD HH:MM:SS>                      Start timestamp, UTC time. (Optional. Defaults to 5min ago)
 -end <YYYY-MM-DD HH:MM:SS>                        End timestamp, UTC time. (Optional. Defaults to now)
