@@ -84,7 +84,7 @@ public class AuraGcloudLoggingParser implements LogLineParser {
     //  " jsonPayload.event!=\"start\" "
     public Stream<LogEntry> getLogEntries(String dbid, String extraFilter) throws Exception {
         String filter="logName=projects/" + this.options.getProjectId() + "/logs/neo4j-query"
-                        +" AND  jsonPayload.dbid=\""+dbid+"\" ";
+                        +" AND  jsonPayload.dbid=\""+dbid+"\" AND jsonPayload.event!=\"start\" ";
         filter+=extraFilter;
         //filter+=" AND "+BACKGROUND_QUERY_FILTER;
 
@@ -96,7 +96,7 @@ public class AuraGcloudLoggingParser implements LogLineParser {
 //            for (LogEntry entry : entries.iterateAll()) {
 //                System.out.println(i++ + ":"+entry.getInsertId());
 //            }
-            return StreamSupport.stream(entries.iterateAll().spliterator(), false);
+            return StreamSupport.stream(entries.iterateAll().spliterator(), true);
 //            Stream<LogEntry> allEntriesStream=Stream.of();
 //            do {
 //                allEntriesStream = Stream.concat(allEntriesStream, StreamSupport.stream(entries.iterateAll().spliterator(), false));
