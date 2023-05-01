@@ -60,13 +60,25 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.neo4j.logging.QueryLogParser</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
                 <!-- This generates a jar-file with our procedure code,
                      plus any dependencies marked as `compile` scope.
                      This should then be deployed in the `plugins` directory
                      of each Neo4j instance in your deployment.
                      After a restart, the procedure is available for calling. -->
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
+                <version>3.4.1</version>
                 <configuration>
                     <createDependencyReducedPom>false</createDependencyReducedPom>
                     <filters>
@@ -78,6 +90,9 @@
                                 <exclude>*/NOTICE*</exclude>
                                 <exclude>NOTICE*</exclude>
                                 <exclude>module-info.class</exclude>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
                             </excludes>
                         </filter>
                     </filters>
@@ -87,7 +102,9 @@
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
-                        </goals>
+                        </goals> <configuration>
+                        <finalName>query-log-parser</finalName>
+                    </configuration>
                     </execution>
                 </executions>
             </plugin>

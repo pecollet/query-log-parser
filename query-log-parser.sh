@@ -4,6 +4,7 @@ set -o errexit -o nounset -o pipefail
 [[ "${TRACE:-}" ]] && set -o xtrace
 
 PROGRAM="$(basename "$0")"
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 readonly PROGRAM
 
 detect_os() {
@@ -51,6 +52,7 @@ _find_java_home() {
 
 check_java() {
   _find_java_cmd
+  "${JAVA_CMD}" "-version"
   version_command=("${JAVA_CMD}" "-version")
 
   JAVA_VERSION=$("${version_command[@]}" 2>&1 | awk -F '"' '/version/ {print $2}')
@@ -71,15 +73,14 @@ check_java() {
 
 call_main_class() {
   check_java
-  CLASSPATH="./target/*:*" #"./target/query-log-parser-*:query-log-parser-*"
+  JAR_FILE="${SCRIPT_DIR}/target/query-log-parser.jar"
   JAVA_MEMORY_OPTS_XMX="-Xmx2g"
   class_name=$1
   shift
 
   exec "${JAVA_CMD}" ${JAVA_MEMORY_OPTS_XMX-} \
-    -classpath "${CLASSPATH}" \
     "-Dfile.encoding=UTF-8" \
-    "$class_name" "$@"
+    -jar "$JAR_FILE"  "$@"
 }
 
 
