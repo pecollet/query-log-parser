@@ -35,8 +35,7 @@ public class QueryLogParser {
     {
         JSON,
         STANDARD,
-        JMETER,
-        HC
+        JMETER
     }
     private static final Options options = new Options();
     private static final CommandLineParser parser = new DefaultParser();
@@ -55,7 +54,7 @@ public class QueryLogParser {
         input.setRequired(true);
         options.addOption(input);
 
-        Option output = new Option("o", "output", true, "output to produce : [json|jmeter|hc|standard]");
+        Option output = new Option("o", "output", true, "output to produce : [json|jmeter|standard]");
         output.setRequired(true);
         options.addOption(output);
 
@@ -169,16 +168,6 @@ public class QueryLogParser {
                     System.exit(2);
                 }
                 break;
-            case HC:
-                try {
-                    new HealthCheckWriter(logLineParser)
-                            .parse()
-                            .write(outputFilePath, 10);
-                } catch(Exception e) {
-                    e.printStackTrace();
-                    System.exit(2);
-                }
-                break;
         }
 
     }
@@ -249,9 +238,6 @@ public class QueryLogParser {
                 break;
             case JMETER:
                 outputFileName= inputFile+".jmx";
-                break;
-            case HC:
-                outputFileName= inputFile+".hc.properties";
                 break;
         }
         System.out.println("Output file : "+outputFileName);
