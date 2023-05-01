@@ -34,9 +34,13 @@ ex:
 ```
 
 **outputs** 
-* json : query.log in json format ("_inputfile_.json.log")
-* standard : query.log in standard format ("_inputfile_.std.log")
+
+In the same directory as the input file, with an extra suffix :
+* json : query.log in json format ("_inputfile_.json")
+* standard : query.log in standard format ("_inputfile_.std")
 * jmeter : a JMeter test plan file to replay the query log ("_inputfile_.jmx")
+
+For Aura exports, the file will be generated in a local subdirectory named "output".
 
 ## JMeter test plan
 

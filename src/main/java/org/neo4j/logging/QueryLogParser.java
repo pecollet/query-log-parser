@@ -123,7 +123,7 @@ public class QueryLogParser {
                 e.printStackTrace();
                 System.exit(2);
             }
-            outputFile=outputFileName(String.format("%s_%s_%s",auraDbId, start_ts.replaceAll("[-: ]", ""), end_ts.replaceAll("[-: ]", "")), outputOption);
+            outputFile=outputFileName(String.format("./output/%s_%s_%s",auraDbId, start_ts.replaceAll("[-: ]", ""), end_ts.replaceAll("[-: ]", "")), outputOption);
         } else {
             //open input file
             System.out.println("Loading file : "+inputFile+"...");
@@ -133,17 +133,15 @@ public class QueryLogParser {
         }
 
         //create output file
+
+        File file = new File(outputFile);
         try {
-            if (!Files.exists(Path.of(outputFile))) {
-                outputFilePath = Files.createFile(Path.of(outputFile));
-            } else {
-                outputFilePath = Path.of(outputFile);
-                //TODO: truncate file
-            }
-        } catch(IOException e) {
-            System.out.println("Failed to write to file "+outputFilePath+" ("+e.getClass()+")");
-            //e.printStackTrace();
-            System.exit(2);
+            file.getParentFile().mkdirs();
+            file.createNewFile();
+            System.out.println("File created at " + outputFile);
+            outputFilePath = Path.of(outputFile);
+        } catch (IOException e) {
+            System.out.println("Failed to create file "+outputFile+" : " + e.getMessage());
         }
 
         //choose action depending on output selected
@@ -231,10 +229,10 @@ public class QueryLogParser {
         String outputFileName="";
         switch (outputOption) {
             case JSON:
-                outputFileName= inputFile.replaceFirst("\\.log$",".json")+".log";
+                outputFileName= inputFile+".json";
                 break;
             case STANDARD:
-                outputFileName= inputFile.replaceFirst("\\.log$",".std")+".log";
+                outputFileName= inputFile+".std";
                 break;
             case JMETER:
                 outputFileName= inputFile+".jmx";

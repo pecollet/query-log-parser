@@ -1,4 +1,4 @@
-
+output/*
 .idea/*
 query-log-parser.iml
 target/*
