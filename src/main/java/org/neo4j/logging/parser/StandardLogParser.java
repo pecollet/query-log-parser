@@ -27,7 +27,7 @@ public class StandardLogParser implements LogLineParser {
                     "(?<started>Query started: )?" +
                     "(?:id:(?<id>\\d+) - )?" +
                     "(?<elapsed>\\d+) ms: " +
-                    "(?:\\(planning: (?<planning>\\d+)(?:, cpu: (?<cpu>\\d+))?, waiting: (?<waiting>\\d+)\\) - )?" +
+                    "(?:\\(planning: (?<planning>[-\\d]+)(?:, cpu: (?<cpu>\\d+))?, waiting: (?<waiting>\\d+)\\) - )?" +
                     "(?:(?<allocatedBytes>[-\\d]+) B - )?" +
                     "(?:(?<pageHits>\\d+) page hits, (?<pageFaults>\\d+) page faults - )?" +
                     "(?<source>embedded-session\\t|bolt-session[^>]*>|server-session(?:\\t[^\\t]*){3})\\t" +

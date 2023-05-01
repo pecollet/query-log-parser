@@ -3,6 +3,7 @@ package org.neo4j.logging.writer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.chain.web.MapEntry;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -74,7 +75,14 @@ public class JmeterWriter {
             //.filter(line -> "INFO".equals(line.get("level")))
             .filter(line -> line.get("source").toString().startsWith("bolt-session"))
             .limit(this.config.maxQueries)                                      //apply limit
-            .collect(groupingBy(line -> line.get("source").toString()))         //group by source
+                //bolt-session\tbolt\tneo4j-cypher-shell/v4.3.0-drop04.0\t\tclient/127.0.0.1:58881\tserver/127.0.0.1:7617>
+            .collect(groupingBy(line -> {
+                        String[] source=line.get("source").toString().split("\\t");
+                        String clientHost=source[4].split(":")[0];
+                        String clientDriver=source[2];
+                        return clientHost+'\t'+clientDriver;
+                        })
+                    )         //group by source
             .forEach((src,listOfEntries)-> createThreadGroup(src, listOfEntries));  //create Thread groups
 
         return this;
@@ -149,7 +157,7 @@ public class JmeterWriter {
         public BoltSamplerData(String time, String database, String query, Map<?,?> parameters, JMeterConfig config) {
             this.database=database.equals("<none>") ? "" : database;
             this.query=query;
-            this.name= (query.length() > config.samplerNameMaxLength) ? query.substring(0,config.samplerNameMaxLength-1)+"..." : query;
+            this.name= (query.length() > config.samplerNameMaxLength) ? StringEscapeUtils.escapeXml(query.substring(0,config.samplerNameMaxLength-1))+"..." : query;
             try {
                 this.queryParameters=mapper.writeValueAsString(parameters); //Util.formatJson(parameters);
             } catch (JsonProcessingException e) {
@@ -253,9 +261,10 @@ public class JmeterWriter {
 
         public ThreadGroupData(String source) {
             //bolt-session\tbolt\tneo4j-cypher-shell/v4.3.0-drop04.0\t\tclient/127.0.0.1:58881\tserver/127.0.0.1:7617>
-            String clientType=source.split("\\t")[2];
-            String clientHostPort=source.split("\\t")[4];
+            String clientType=source.split("\\t")[1];
+            String clientHostPort=source.split("\\t")[0];
             this.name=clientHostPort;
+            //TODO : recognize browser/bloom/ops-manager/halin/neodash & other well known clients from their queries
             this.comment=clientType;
         }
         public void setStartTime(String startTime) {
@@ -329,7 +338,7 @@ public class JmeterWriter {
         private double speedFactor=1;
         private Map filters;
 
-        private int samplerNameMaxLength=25;
+        private int samplerNameMaxLength=50;
         private int samplerTxTimeout=60;
         private String samplerAccessMode="WRITE";
         private String samplerRecordQueryResults="true";
