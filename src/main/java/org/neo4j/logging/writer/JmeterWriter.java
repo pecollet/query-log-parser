@@ -264,7 +264,6 @@ public class JmeterWriter {
             String clientType=source.split("\\t")[1];
             String clientHostPort=source.split("\\t")[0];
             this.name=clientHostPort;
-            //TODO : recognize browser/bloom/ops-manager/halin/neodash & other well known clients from their queries
             this.comment=clientType;
         }
         public void setStartTime(String startTime) {
